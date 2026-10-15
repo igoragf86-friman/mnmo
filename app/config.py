@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     app_name: str = "AI Agents API"
     app_env: str = "development"
-
+    jwt_secret_key: SecretStr
     # Qwen / llama.cpp
     qwen_base_url: str = "http://172.16.121.114:8080"
     qwen_api_key: SecretStr | None = None

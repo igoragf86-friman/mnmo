@@ -62,8 +62,11 @@ class User(Base):
     created_agents: Mapped[list["Agent"]] = relationship(
         back_populates="created_by_user"
     )
-
-
+    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 class Agent(Base):
     __tablename__ = "agents"
 
@@ -395,3 +398,33 @@ class DocumentAccessGrant(Base):
     granted_by_user: Mapped["User"] = relationship(
         foreign_keys=[granted_by],
     )
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+
+    __table_args__ = (
+        Index("ix_refresh_tokens_user_id", "user_id"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger, primary_key=True, autoincrement=True
+    )
+    token_hash: Mapped[str] = mapped_column(
+        String(64), nullable=False, unique=True, index=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    user: Mapped["User"] = relationship(back_populates="refresh_tokens")
