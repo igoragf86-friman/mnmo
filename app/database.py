@@ -1,4 +1,3 @@
-
 from collections.abc import AsyncGenerator
 
 from sqlalchemy import text
@@ -7,17 +6,19 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.orm import DeclarativeBase
 
 from app.config import settings
 
 
-DATABASE_URL = settings.database_url.get_secret_value()
+class Base(DeclarativeBase):
+    """Базовый класс моделей базы данных."""
+
 
 engine = create_async_engine(
-    DATABASE_URL,
+    settings.database_url,
     pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=10,
+    echo=False,
 )
 
 AsyncSessionLocal = async_sessionmaker(
@@ -28,15 +29,12 @@ AsyncSessionLocal = async_sessionmaker(
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """Создаёт сессию БД для одного запроса FastAPI."""
     async with AsyncSessionLocal() as session:
         yield session
 
 
-async def check_database() -> bool:
+async def check_database_connection() -> None:
+    """Проверяет подключение к PostgreSQL."""
     async with engine.connect() as connection:
-        result = await connection.execute(text("SELECT 1"))
-        return result.scalar_one() == 1
-
-
-async def close_database() -> None:
-    await engine.dispose()
+        await connection.execute(text("SELECT 1"))

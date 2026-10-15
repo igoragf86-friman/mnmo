@@ -424,27 +424,56 @@ function demoReply(a,text){
   r+='\n\n'+(dn?'К агенту прикреплено документов: '+dn+', но в прототипе они не обрабатываются. ':'')+'Настоящий ответ появится после подключения API AI-агента.';
   return r;
 }
-function sendMsg(raw){
+async function sendMsg(raw){
   const text=(raw||'').trim();
   if(!text||busy||!chatId)return;
   const a=getAgent(chatId),id=chatId;
   const conv=S.convs[id]||(S.convs[id]={updated:Date.now(),messages:[]});
   const um={role:'user',text,ts:Date.now()};
   conv.messages.push(um);conv.updated=um.ts;save('convs');
+
   const box=document.getElementById('chatMsgs'),inp=document.getElementById('chatInput');
   box.insertAdjacentHTML('beforeend',msgHtml(um,a));
-  inp.value='';inp.style.height='auto';busy=true;document.getElementById('sendBtn').disabled=true;
-  box.insertAdjacentHTML('beforeend','<div class="msg agent typing" id="typing" aria-label="Агент печатает">'+tile(a)+'<div class="bubble"><i></i><i></i><i></i></div></div>');
+  inp.value='';inp.style.height='auto';busy=true;
+  document.getElementById('sendBtn').disabled=true;
+  box.insertAdjacentHTML('beforeend',
+    '<div class="msg agent typing" id="typing" aria-label="Агент печатает">'+tile(a)+
+    '<div class="bubble"><i></i><i></i><i></i></div></div>');
   scrollChat();
-  setTimeout(()=>{
-    const am={role:'agent',text:demoReply(a,text),ts:Date.now()};
-    conv.messages.push(am);conv.updated=am.ts;save('convs');
-    if(chatId===id){
-      const ty=document.getElementById('typing');if(ty)ty.remove();
-      document.getElementById('chatMsgs').insertAdjacentHTML('beforeend',msgHtml(am,a));
-      busy=false;const i=document.getElementById('chatInput');document.getElementById('sendBtn').disabled=!i.value.trim();scrollChat();
+
+  let answer;
+  try{
+    const r = await fetch('/api/v1/chat', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        message: text,
+        system_prompt: a.instr || null
+      })
+    });
+    const j = await r.json().catch(()=>null);
+    if(!r.ok){
+      const det = j && (typeof j.detail === 'string' ? j.detail :
+                        (j.detail && (j.detail.message || JSON.stringify(j.detail))) ||
+                        j.message);
+      throw new Error(det || ('Ошибка '+r.status));
     }
-  },900+Math.random()*600);
+    answer = (j && j.answer) ? j.answer : '(пустой ответ модели)';
+  }catch(err){
+    answer = 'Не удалось получить ответ от модели: ' + (err && err.message ? err.message : err);
+  }
+
+  const am={role:'agent',text:answer,ts:Date.now()};
+  conv.messages.push(am);conv.updated=am.ts;save('convs');
+
+  if(chatId===id){
+    const ty=document.getElementById('typing');if(ty)ty.remove();
+    document.getElementById('chatMsgs').insertAdjacentHTML('beforeend',msgHtml(am,a));
+    busy=false;
+    const i=document.getElementById('chatInput');
+    document.getElementById('sendBtn').disabled=!i.value.trim();
+    scrollChat();
+  }
 }
 async function clearChat(){
   if(!chatId||!S.convs[chatId])return toast('Чат уже пуст.');

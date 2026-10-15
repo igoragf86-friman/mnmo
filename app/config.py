@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     qwen_temperature: float = Field(default=0.2, ge=0, le=2)
 
     # PostgreSQL
-    database_url: SecretStr
+    database_url: str
     embedding_dimension: int = Field(default=768, gt=0)
 
 
