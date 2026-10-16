@@ -187,6 +187,33 @@ dialog form{display:flex;flex-direction:column;max-height:calc(100vh - 24px)}
 .tabbar{display:none}
 .set-list{display:flex;flex-direction:column;gap:14px;max-width:560px}
 
+.exit-button {
+  text-decoration: none;
+  display: inline-block;
+  width: 140px;
+  height: 45px;
+  line-height: 45px;
+  border-radius: 45px;
+  margin: 10px 20px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  text-align: center;
+  letter-spacing: 3px;
+  font-weight: 600;
+  color: #524f4e;
+  background: white;
+  box-shadow: 0 8px 15px rgba(0, 0, 0, .1);
+  transition: .3s;
+}
+.exit-button:hover {
+  background: #e52e2e;
+  box-shadow: 0 15px 20px rgba(46, 229, 157, .4);
+  color: white;
+  transform: translateY(-7px);
+}
+
+
 @media (max-width:1000px){
   .docs-layout{grid-template-columns:1fr}
 }
@@ -217,3 +244,98 @@ dialog form{display:flex;flex-direction:column;max-height:calc(100vh - 24px)}
   .dlg-foot .btn{flex:1}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+/* комбобоксы (документы в агенте и пользователи в share) */
+.doc-combo { position: relative; }
+.doc-combo-input {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 10px;
+  background: #fff;
+  cursor: text;
+}
+.doc-combo-input:focus-within {
+  border-color: rgba(79,70,229,.6);
+  box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+}
+.doc-combo-input .ico { width: 16px; height: 16px; color: #888; flex-shrink: 0; }
+.doc-combo-input .ico svg { width: 100%; height: 100%; display: block; }
+.doc-combo-input input {
+  border: 0; outline: 0; background: transparent;
+  width: 100%; font: inherit; color: inherit;
+}
+.doc-combo-count {
+  font-size: 12px; color: #4f46e5; flex-shrink: 0; white-space: nowrap;
+}
+.doc-combo-drop {
+  position: absolute; z-index: 20;
+  top: calc(100% + 4px); left: 0; right: 0;
+  max-height: 240px; overflow-y: auto;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(0,0,0,.12);
+  padding: 6px;
+}
+.doc-combo-drop[hidden] { display: none; }
+.doc-group-label {
+  font-size: 11px; text-transform: uppercase;
+  letter-spacing: .05em; color: #777;
+  padding: 6px 8px 2px;
+}
+.doc-check {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 6px;
+  font-size: 14px; cursor: pointer;
+}
+.doc-check:hover { background: rgba(0,0,0,.04); }
+.doc-check input { margin: 0; flex-shrink: 0; }
+.doc-check-name {
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.picker-empty { font-size: 13px; padding: 8px; margin: 0; color: #888; }
+
+/* share-диалог */
+.share-public-toggle {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 10px 12px; border-radius: 10px;
+  background: #f7f7f9;
+  cursor: pointer;
+}
+.share-public-toggle input { margin-top: 3px; flex-shrink: 0; }
+.share-public-toggle small { display: block; margin-top: 2px; }
+
+.share-divider {
+  height: 1px;
+  background: rgba(0,0,0,.08);
+  margin: 14px 0;
+}
+
+#shareDlg { width: min(480px, 92vw); }
+
+/* отключённые документы в чате */
+.agent-docs {
+  margin: 12px 0 4px;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: #fafafb;
+}
+.agent-docs > summary {
+  cursor: pointer; font-weight: 500;
+  display: flex; align-items: center; gap: 8px;
+  list-style: none;
+}
+.agent-docs > summary::-webkit-details-marker { display: none; }
+.agent-docs ul { list-style: none; padding: 8px 0 0; margin: 0; }
+.agent-docs li {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 0; font-size: 13px;
+  border-top: 1px solid rgba(0,0,0,.05);
+}
+.agent-docs li:first-child { border-top: 0; }
+.agent-docs li.disabled { opacity: .55; }
+.agent-docs li.disabled .doc-name { text-decoration: line-through; }
+.agent-docs .doc-name {
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}

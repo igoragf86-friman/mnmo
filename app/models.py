@@ -67,6 +67,12 @@ class User(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
+    shared_agents: Mapped[list["AgentShare"]] = relationship(
+        back_populates="user",
+        foreign_keys="AgentShare.user_id",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 class Agent(Base):
     __tablename__ = "agents"
 
@@ -113,7 +119,21 @@ class Agent(Base):
     conversations: Mapped[list["Conversation"]] = relationship(
         back_populates="agent"
     )
+    icon: Mapped[str] = mapped_column(
+        String(40), nullable=False, default="bot", server_default="bot"
+    )
+    color: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="#4f46e5", server_default="#4f46e5"
+    )
 
+    shares: Mapped[list["AgentShare"]] = relationship(
+        back_populates="agent",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    is_public: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
 
 class Document(Base):
     __tablename__ = "documents"
@@ -178,30 +198,28 @@ class Document(Base):
         passive_deletes=True,
     )
 
-    access_grants: Mapped[list["DocumentAccessGrant"]] = relationship(
-        back_populates="document",
-        cascade="all, delete-orphan",
-        passive_deletes=True,
-    )
 
 
 class AgentDocument(Base):
     __tablename__ = "agent_documents"
 
     agent_id: Mapped[int] = mapped_column(
-        BigInteger,
-        ForeignKey("agents.id", ondelete="CASCADE"),
+        BigInteger, ForeignKey("agents.id", ondelete="CASCADE"),
         primary_key=True,
     )
     document_id: Mapped[int] = mapped_column(
-        BigInteger,
-        ForeignKey("documents.id", ondelete="CASCADE"),
+        BigInteger, ForeignKey("documents.id", ondelete="CASCADE"),
         primary_key=True,
     )
     attached_by: Mapped[int] = mapped_column(
-        BigInteger,
-        ForeignKey("users.id", ondelete="RESTRICT"),
+        BigInteger, ForeignKey("users.id", ondelete="RESTRICT"),
         nullable=False,
+    )
+    is_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
+    is_inherited: Mapped[bool] = mapped_column(          # ← новое
+        Boolean, nullable=False, default=False, server_default="false"
     )
     attached_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -347,57 +365,6 @@ class Message(Base):
     conversation: Mapped["Conversation"] = relationship(
         back_populates="messages"
     )
-class DocumentAccessGrant(Base):
-    __tablename__ = "document_access_grants"
-
-    __table_args__ = (
-        UniqueConstraint(
-            "document_id",
-            "user_id",
-            name="uq_document_access_grant",
-        ),
-    )
-
-    id: Mapped[int] = mapped_column(
-        BigInteger,
-        primary_key=True,
-        autoincrement=True,
-    )
-
-    document_id: Mapped[int] = mapped_column(
-        BigInteger,
-        ForeignKey("documents.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-
-    user_id: Mapped[int] = mapped_column(
-        BigInteger,
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-
-    granted_by: Mapped[int] = mapped_column(
-        BigInteger,
-        ForeignKey("users.id", ondelete="RESTRICT"),
-        nullable=False,
-    )
-
-    granted_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        nullable=False,
-    )
-
-    document: Mapped["Document"] = relationship(
-        back_populates="access_grants",
-    )
-
-    user: Mapped["User"] = relationship(
-        foreign_keys=[user_id],
-    )
-    granted_by_user: Mapped["User"] = relationship(
-        foreign_keys=[granted_by],
-    )
 
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
@@ -428,3 +395,38 @@ class RefreshToken(Base):
     )
 
     user: Mapped["User"] = relationship(back_populates="refresh_tokens")
+
+class AgentShare(Base):
+    __tablename__ = "agent_shares"
+
+    __table_args__ = (
+        UniqueConstraint("agent_id", "user_id", name="uq_agent_share"),
+        Index("ix_agent_shares_user_id", "user_id"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger, primary_key=True, autoincrement=True
+    )
+    agent_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("agents.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    user_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    shared_by: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    shared_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    agent: Mapped["Agent"] = relationship(back_populates="shares")
+    user: Mapped["User"] = relationship(foreign_keys=[user_id])
+    shared_by_user: Mapped["User"] = relationship(foreign_keys=[shared_by])
+    

@@ -6,15 +6,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Мнемозина — рабочее пространство AI-агентов</title>
-<meta name="description" content="Фронтенд-прототип интерфейса для работы с AI-агентами. Демонстрационные данные.">
-<!-- <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">-->
+<meta name="description" content="Интерфейс для работы с AI-агентами.">
 <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
 <body>
 <a class="skip" href="#main">К содержимому</a>
 
 <div class="app" id="app">
-<!-- section:sidebar -->
 <aside class="sidebar" aria-label="Основная навигация">
   <a class="brand" href="#/overview" aria-label="Мнемозина — на главную">
     <span class="brand-mark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.2 5.3L20 10l-4.4 3.7L17 19.5 12 16.5 7 19.5l1.4-5.8L4 10l5.8-1.7z"/></svg></span>
@@ -25,53 +22,29 @@
     <a class="nav-item" href="#/settings" data-nav="settings"><span class="ico" data-ico="settings"></span><span>Настройки</span></a>
     <div class="profile">
       <span class="avatar" aria-hidden="true">АК</span>
-      <span class="profile-txt"><b>Игорь Агафонов</b><small>Демо-профиль</small></span>
+      <span class="profile-txt"><b>Игорь Агафонов</b><small>Профиль</small></span>
     </div>
   </div>
   <form method="post" action="/logout" style="display:inline">
     <button type="submit">Выйти</button>
   </form>
 </aside>
-<!-- /section:sidebar -->
 
 <main class="main" id="main" tabindex="-1">
 
-<!-- section:overview -->
 <section class="view" id="view-overview" data-view="overview" hidden></section>
-<!-- /section:overview -->
-
-<!-- section:catalog -->
 <section class="view" id="view-catalog" data-view="catalog" hidden></section>
-<!-- /section:catalog -->
-
-<!-- section:agents -->
 <section class="view" id="view-agents" data-view="agents" hidden></section>
-<!-- /section:agents -->
-
-<!-- section:documents -->
 <section class="view" id="view-docs" data-view="docs" hidden></section>
-<!-- /section:documents -->
-
-<!-- section:history -->
 <section class="view" id="view-history" data-view="history" hidden></section>
-<!-- /section:history -->
-
-<!-- section:settings -->
 <section class="view" id="view-settings" data-view="settings" hidden></section>
-<!-- /section:settings -->
-
-<!-- section:chat -->
 <section class="view view-chat" id="view-chat" data-view="chat" hidden></section>
-<!-- /section:chat -->
 
 </main>
 
-<!-- section:mobilebar -->
 <nav class="tabbar" id="tabBar" aria-label="Мобильная навигация"></nav>
-<!-- /section:mobilebar -->
 </div>
 
-<!-- section:dialogs -->
 <dialog id="agentDlg" aria-labelledby="agentDlgTitle">
   <form id="agentForm" novalidate>
     <header class="dlg-head">
@@ -94,6 +67,17 @@
         <textarea id="fInstr" rows="5" maxlength="2000" placeholder="Опишите роль, тон ответа и ограничения"></textarea>
         <p class="hint"><span id="fCount">0</span> / 2000</p>
       </div>
+      <fieldset class="field">
+        <legend>Документы агента</legend>
+        <div class="doc-combo" id="fDocsCombo">
+          <div class="doc-combo-input">
+            <span class="ico" data-ico="search"></span>
+            <input type="search" id="fDocsSearch" placeholder="Поиск и выбор документов" autocomplete="off" aria-label="Поиск и выбор документов">
+            <span class="doc-combo-count" id="fDocsCount"></span>
+          </div>
+          <div class="doc-combo-drop" id="fDocsList" hidden></div>
+        </div>
+      </fieldset>
       <fieldset class="field"><legend>Иконка</legend><div class="picker" id="iconPicker"></div></fieldset>
       <fieldset class="field"><legend>Цветовой акцент</legend><div class="picker" id="colorPicker"></div></fieldset>
     </div>
@@ -102,6 +86,39 @@
       <button type="submit" class="btn primary" id="fSave">Сохранить</button>
     </footer>
   </form>
+</dialog>
+
+<dialog id="shareDlg" aria-labelledby="shareDlgTitle">
+  <div class="dlg-head">
+    <h2 id="shareDlgTitle">Поделиться агентом</h2>
+    <button type="button" class="icon-btn" data-action="close-share" aria-label="Закрыть"><span class="ico" data-ico="x"></span></button>
+  </div>
+  <div class="dlg-body">
+    <label class="share-public-toggle">
+      <input type="checkbox" id="sharePublic">
+      <span>
+        <b>Опубликовать в каталоге</b>
+        <small class="muted">Агент станет виден всем пользователям.</small>
+      </span>
+    </label>
+
+    <div class="share-divider"></div>
+
+    <div class="field" style="margin:0">
+      <label>Доступ для пользователей</label>
+      <div class="doc-combo" id="shareUserCombo">
+        <div class="doc-combo-input">
+          <span class="ico" data-ico="search"></span>
+          <input type="search" id="shareUserSearch" placeholder="Поиск и выбор пользователей" autocomplete="off" aria-label="Поиск и выбор пользователей">
+          <span class="doc-combo-count" id="shareUserCount"></span>
+        </div>
+        <div class="doc-combo-drop" id="shareUserDrop" hidden></div>
+      </div>
+    </div>
+  </div>
+  <div class="dlg-foot">
+    <button type="button" class="btn primary" data-action="apply-share">Готово</button>
+  </div>
 </dialog>
 
 <dialog id="confirmDlg" class="small" aria-labelledby="cTitle">
@@ -116,7 +133,6 @@
     </footer>
   </form>
 </dialog>
-<!-- /section:dialogs -->
 
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 
@@ -150,23 +166,10 @@ const ICONS = {
 function icon(name){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(ICONS[name]||ICONS.bot)+'</svg>';}
 const AGENT_ICONS=['bot','doc','code','pen','search','book','chart','spark'];
 const AGENT_COLORS=[['#4f46e5','Индиго'],['#7c3aed','Фиолетовый'],['#0284c7','Голубой'],['#0f8a5f','Зелёный'],['#c62842','Малиновый'],['#b45309','Охра']];
-const CATEGORIES=['Все','Работа','Учёба','Разработка','Письмо'];
-const ALLOWED_EXT=['pdf','docx','txt','md','csv'];
 const MAX_FILE_MB=20;
-
-const CATALOG=[
- {id:'c-docs',name:'Помощник по документам',cat:'Работа',desc:'Отвечает на вопросы по вашим файлам, находит нужные пункты и делает краткие выжимки.',instr:'Отвечай только на основе прикреплённых документов и указывай, где найдена информация.',icon:'doc',color:'#4f46e5',greet:'Прикрепите документы в разделе «Документы», и я помогу найти в них нужное.',tips:['Сделай краткую выжимку','Найди сроки и обязательства','Какие в документе риски?']},
- {id:'c-res',name:'Исследователь',cat:'Работа',desc:'Структурирует тему, собирает гипотезы, сравнивает подходы и формирует план исследования.',instr:'Работай как аналитик: выделяй факты, гипотезы и пробелы в данных.',icon:'search',color:'#0284c7',greet:'Назовите тему — составим план исследования и список вопросов.',tips:['Составь план исследования','Сравни два подхода','Какие вопросы задать эксперту?']},
- {id:'c-py',name:'Python-разработчик',cat:'Разработка',desc:'Пишет и разбирает код, помогает с Django, тестами, рефакторингом и отладкой.',instr:'Давай рабочий код на Python с пояснениями и учитывай Django 6.',icon:'code',color:'#0f8a5f',greet:'Покажите код или опишите задачу — разберём её по шагам.',tips:['Напиши Django-view для списка','Объясни этот traceback','Покрой функцию тестами']},
- {id:'c-edit',name:'Редактор текста',cat:'Письмо',desc:'Правит стиль и пунктуацию, упрощает формулировки и сохраняет авторский тон.',instr:'Сохраняй смысл и голос автора, объясняй основные правки.',icon:'pen',color:'#c62842',greet:'Вставьте текст — предложу правки и коротко объясню их.',tips:['Сделай текст короче','Исправь стиль и пунктуацию','Перепиши в деловом тоне']},
- {id:'c-tutor',name:'Репетитор',cat:'Учёба',desc:'Объясняет темы простым языком, задаёт проверочные вопросы и составляет конспекты.',instr:'Объясняй пошагово, приводи примеры и проверяй понимание вопросами.',icon:'book',color:'#7c3aed',greet:'Какую тему разберём? Могу объяснить, составить конспект или устроить мини-тест.',tips:['Объясни простыми словами','Составь конспект темы','Проверь меня тестом']},
- {id:'c-data',name:'Аналитик данных',cat:'Работа',desc:'Помогает разобраться в таблицах, предлагает метрики и формулирует выводы из CSV.',instr:'Предлагай метрики и аккуратно формулируй выводы, отмечая ограничения данных.',icon:'chart',color:'#b45309',greet:'Опишите данные или прикрепите CSV — подскажу, что и как посчитать.',tips:['Какие метрики посчитать?','Найди аномалии в данных','Сформулируй выводы']},
- {id:'c-copy',name:'Автор писем',cat:'Письмо',desc:'Готовит деловые письма, ответы клиентам и анонсы в нужной тональности.',instr:'Пиши ясно и вежливо, предлагай два варианта тона.',icon:'spark',color:'#4f46e5',greet:'Расскажите, кому и зачем пишете, — подготовлю черновик письма.',tips:['Ответ на жалобу клиента','Анонс обновления','Напоминание о сроке']},
- {id:'c-rev',name:'Ревьюер кода',cat:'Разработка',desc:'Проверяет изменения на ошибки, читаемость и безопасность, предлагает улучшения.',instr:'Оценивай код по ошибкам, безопасности и читаемости; приоритизируй замечания.',icon:'code',color:'#0284c7',greet:'Отправьте фрагмент кода или diff — проведу ревью.',tips:['Проверь на уязвимости','Упрости эту функцию','Что с именованием?']}
-];
 </script>
 <script>
-/* Состояние + локальное хранение (в песочнице может не сохраняться между перезагрузками) */
+/* Состояние + локальное хранилище (только чаты) */
 const Store={
   mem:{},
   get(k,d){
@@ -176,31 +179,23 @@ const Store={
   set(k,v){this.mem[k]=v;try{localStorage.setItem('agt:'+k,JSON.stringify(v));}catch(e){}}
 };
 const now=Date.now(),H=3600e3,D=24*H;
-function seedConvs(){
-  const m=(r,t,ago)=>({role:r,text:t,ts:now-ago});
-  return {
-    'c-docs':{updated:now-2*H,messages:[m('user','Сделай краткую выжимку по договору',2*H+60e3),m('agent','Демонстрационный ответ: здесь появится выжимка по прикреплённым документам.',2*H)]},
-    'c-py':{updated:now-D,messages:[m('user','Напиши Django-view для списка заказов',D+60e3),m('agent','Демонстрационный ответ: пример класса ListView с пагинацией и фильтрацией.',D)]},
-    'c-edit':{updated:now-3*D,messages:[m('user','Сделай текст короче',3*D+60e3),m('agent','Демонстрационный ответ: сокращённая версия сохранит основную мысль.',3*D)]}
-  };
-}
+function seedConvs(){return {};}
+
 const S={
-  agents:Store.get('agents',[{id:'u-1',name:'Мой аналитик отчётов',desc:'Разбирает квартальные отчёты и готовит сводки для команды.',instr:'Отвечай кратко, используй списки и выделяй цифры.',icon:'chart',color:'#7c3aed'}]),
-  docs:Store.get('docs',[
-    {id:'d1',agentId:'u-1',name:'Отчёт_Q1.pdf',ext:'pdf',size:2411724,status:'demo'},
-    {id:'d2',agentId:'u-1',name:'Метрики.csv',ext:'csv',size:48210,status:'demo'},
-    {id:'d3',agentId:'c-docs',name:'Договор_поставки.docx',ext:'docx',size:187392,status:'demo'}
-  ]),
+  me:null,          
+  agents:[],
+  catalog:[],
+  docs:[],
+  docsCount:0,
   convs:Store.get('convs',seedConvs()),
-  ui:{catQ:'',catCat:'Все',docQ:'',docAgent:'all',histQ:'',pending:[]}
+  ui:{catQ:'',docQ:'',docExt:'',histQ:''}
 };
 function save(k){Store.set(k,S[k]);}
-function uid(p){return p+Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function allAgents(){return CATALOG.concat(S.agents);}
-function getAgent(id){return allAgents().find(a=>a.id===id);}
-function isMine(id){return S.agents.some(a=>a.id===id);}
-function fmtSize(b){if(b<1024)return b+' Б';if(b<1048576)return (b/1024).toFixed(b<10240?1:0).replace('.',',')+' КБ';return (b/1048576).toFixed(1).replace('.',',')+' МБ';}
+function allAgents(){return S.agents.concat(S.catalog);}
+function getAgent(id){return allAgents().find(a=>String(a.id)===String(id));}
+function isMine(id){return S.agents.some(a=>String(a.id)===String(id)&&a.is_owner);}
+function fmtSize(b){b=b||0;if(b<1024)return b+' Б';if(b<1048576)return (b/1024).toFixed(b<10240?1:0).replace('.',',')+' КБ';return (b/1048576).toFixed(1).replace('.',',')+' МБ';}
 function fmtTime(ts){
   const d=new Date(ts),n=new Date();
   const hm=d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
@@ -208,12 +203,11 @@ function fmtTime(ts){
   const y=new Date(n-D);if(d.toDateString()===y.toDateString())return 'Вчера, '+hm;
   return d.toLocaleDateString('ru-RU',{day:'numeric',month:'short'});
 }
-function docsOf(id){return S.docs.filter(d=>d.agentId===id);}
 function recentAgents(n){
-  return Object.keys(S.convs).map(id=>({a:getAgent(id),u:S.convs[id].updated})).filter(x=>x.a).sort((x,y)=>y.u-x.u).slice(0,n);
+  return Object.keys(S.convs).map(id=>({a:getAgent(id),u:S.convs[id].updated}))
+    .filter(x=>x.a).sort((x,y)=>y.u-x.u).slice(0,n);
 }
-function tile(a,lg){return '<span class="tile'+(lg?' lg':'')+'" style="--c:'+esc(a.color)+'">'+icon(a.icon)+'</span>';}
-let toastTimer;
+function tile(a,lg){return '<span class="tile'+(lg?' lg':'')+'" style="--c:'+esc(a.color||'#4f46e5')+'">'+icon(a.icon||'bot')+'</span>';}
 function toast(text,type){
   const el=document.createElement('div');el.className='toast'+(type==='error'?' error':'');el.textContent=text;
   document.getElementById('toasts').appendChild(el);
@@ -230,168 +224,386 @@ function confirmDlg(title,text,yes){
     d.showModal();
   });
 }
-</script>
-<script>
-/* Рендер разделов: обзор, каталог, мои агенты, история, настройки */
-function agentCard(a,mode){
-  const mine=isMine(a.id);
-  let foot='';
-  if(mode==='mine'){
-    foot='<button class="btn primary sm" data-action="open-chat" data-id="'+a.id+'"><span class="ico" data-ico="chat"></span>Открыть чат</button>'+
-    '<button class="icon-btn" data-action="edit-agent" data-id="'+a.id+'" aria-label="Редактировать «'+esc(a.name)+'»" title="Редактировать"><span class="ico" data-ico="edit"></span></button>'+
-    '<button class="icon-btn bad" data-action="del-agent" data-id="'+a.id+'" aria-label="Удалить «'+esc(a.name)+'»" title="Удалить"><span class="ico" data-ico="trash"></span></button>';
-  }else{
-    foot='<button class="btn primary sm" data-action="open-chat" data-id="'+a.id+'">Выбрать</button>'+
-    '<button class="btn sm" data-action="clone-agent" data-id="'+a.id+'">Копировать в мои</button>';
-  }
-  const dn=docsOf(a.id).length;
-  return '<article class="card"><div class="card-top">'+tile(a)+'<div><h3>'+esc(a.name)+'</h3>'+(a.cat?'<span class="tag">'+esc(a.cat)+'</span>':'<span class="tag ok">Мой агент</span>')+'</div></div>'+
-   '<p>'+esc(a.desc||'Без описания')+'</p>'+(dn?'<p><small>Документов: '+dn+'</small></p>':'')+'<div class="card-foot">'+foot+'</div></article>';
-}
 function emptyBox(ic,title,text,btn){
   return '<div class="empty"><span class="ico" data-ico="'+ic+'"></span><b>'+title+'</b><span>'+text+'</span>'+(btn||'')+'</div>';
+}
+
+/* ---------- API ---------- */
+async function apiFetch(path, opts){
+  opts = opts || {};
+  const r = await fetch(path, Object.assign({ credentials:'same-origin' }, opts));
+  if(r.status===401){
+    location.href='/login?next='+encodeURIComponent(location.pathname+location.search);
+    throw new Error('Требуется вход');
+  }
+  if(r.status===204) return null;
+  const j = await r.json().catch(()=>null);
+  if(!r.ok){
+    const det = j && (typeof j.detail==='string' ? j.detail
+      : (j.detail && (j.detail.message||JSON.stringify(j.detail))) || j.message);
+    throw new Error(det || ('Ошибка '+r.status));
+  }
+  return j;
+}
+async function loadMe(){
+  try{ S.me = await apiFetch('/api/v1/users/me'); }
+  catch(e){ S.me = null; }
+}
+async function loadAgents(){
+  try{ S.agents = (await apiFetch('/api/v1/agents')).items || []; }
+  catch(e){ S.agents=[]; }
+}
+async function loadCatalog(){
+  try{ S.catalog = (await apiFetch('/api/v1/agents/catalog')).items || []; }
+  catch(e){ S.catalog=[]; }
+}
+async function loadDocs(){
+  try{
+    const d = await apiFetch('/api/v1/documents?limit=500');
+    S.docs = d.items || [];
+    S.docsCount = d.total || 0;
+  }catch(e){ S.docs=[]; S.docsCount=0; }
+}
+
+</script>
+<script>
+/* Обзор, каталог, агенты, история, настройки */
+
+function agentCard(a,mode){
+  const owned = a.is_owner || a.can_edit;
+  const shared = a.is_shared_with_me;
+  const isCatalog = mode==='catalog';
+
+  let foot = '<button class="btn primary sm" data-action="open-chat" data-id="'+a.id+'">'+
+    '<span class="ico" data-ico="chat"></span>Открыть чат</button>';
+
+  if(isCatalog){
+    if(owned){
+      foot += '<span class="tag ok">Мой</span>';
+    } else {
+      foot += '<button class="btn sm" data-action="clone-agent" data-id="'+a.id+'">'+
+        '<span class="ico" data-ico="plus"></span>Клонировать</button>';
+    }
+  } else if(owned){
+    foot +=
+      '<button class="icon-btn" data-action="edit-agent" data-id="'+a.id+'" title="Редактировать"><span class="ico" data-ico="edit"></span></button>'+
+      '<button class="icon-btn" data-action="share-agent" data-id="'+a.id+'" title="Поделиться"><span class="ico" data-ico="users"></span></button>'+
+      '<button class="icon-btn bad" data-action="del-agent" data-id="'+a.id+'" title="Удалить"><span class="ico" data-ico="trash"></span></button>';
+  } else if(shared){
+    foot +=
+      '<button class="btn sm" data-action="clone-agent" data-id="'+a.id+'"><span class="ico" data-ico="plus"></span>Клонировать</button>'+
+      '<button class="icon-btn bad" data-action="remove-shared" data-id="'+a.id+'" title="Убрать у меня"><span class="ico" data-ico="x"></span></button>';
+  } else {
+    foot += '<button class="btn sm" data-action="clone-agent" data-id="'+a.id+'">'+
+      '<span class="ico" data-ico="plus"></span>Клонировать</button>';
+  }
+
+  const tags=[];
+  if(shared) tags.push('<span class="tag warn">Поделились</span>');
+  if(!a.is_owner && a.can_edit) tags.push('<span class="tag warn">Чужой</span>');
+  if(a.is_public) tags.push('<span class="tag">В каталоге</span>');
+  if(a.is_owner) tags.push('<span class="tag ok">Мой агент</span>');
+  
+  const ownerLine = a.owner_name
+    ? '<small class="muted">Владелец: '+esc(a.owner_name)+(owned?' ':'')+'</small>'
+    : '';
+
+  return '<article class="card"><div class="card-top">'+tile(a)+
+    '<div><h3>'+esc(a.name)+'</h3>'+tags.join(' ')+'</div></div>'+
+    '<p>'+esc(a.description||'Без описания')+'</p>'+
+    (a.document_count?'<p><small>Документов: '+a.document_count+'</small></p>':'')+
+    ownerLine+
+    '<div class="card-foot">'+foot+'</div></article>';
 }
 
 function renderOverview(){
   const rec=recentAgents(4);
   document.getElementById('view-overview').innerHTML=
-  '<div class="page-head"><div><p class="eyebrow">Рабочее пространство</p><h1>Добрый день, Игорь</h1><p>Ваше приватное пространство: выбирайте агентов, создавайте своих и прикрепляйте к ним документацию.</p></div></div>'+
-  '<div class="stats"><div class="stat"><b>'+S.agents.length+'</b><span>Мои агенты</span></div><div class="stat"><b>'+S.docs.length+'</b><span>Документы</span></div><div class="stat"><b>'+Object.keys(S.convs).length+'</b><span>Чаты</span></div></div>'+
-  '<p class="muted" style="font-size:13px;margin-bottom:16px">Значения демонстрационные и зависят от локального состояния прототипа.</p>'+
-  '<div class="actions"><button class="btn primary" data-action="new-agent"><span class="ico" data-ico="plus"></span>Создать агента</button><a class="btn" href="#/catalog"><span class="ico" data-ico="search"></span>Найти агента</a></div>'+
+  '<div class="page-head"><div><p class="eyebrow">Рабочее пространство</p><h1>Добрый день</h1>'+
+  '<p>Выбирайте агентов, создавайте своих, прикрепляйте документы и делитесь с коллегами.</p></div></div>'+
+  '<div class="stats">'+
+    '<div class="stat"><b>'+S.agents.filter(a=>a.is_owner).length+'</b><span>Мои агенты</span></div>'+
+    '<div class="stat"><b>'+S.docsCount+'</b><span>Документы</span></div>'+
+    '<div class="stat"><b>'+S.catalog.length+'</b><span>В каталоге</span></div>'+
+  '</div>'+
+  '<div class="actions">'+
+    '<button class="btn primary" data-action="new-agent"><span class="ico" data-ico="plus"></span>Создать агента</button>'+
+    '<a class="btn" href="#/catalog"><span class="ico" data-ico="grid"></span>Открыть каталог</a>'+
+  '</div>'+
   '<div class="section-title"><h2>Недавно использованные</h2><a class="link" href="#/history">Вся история</a></div>'+
-  (rec.length?'<div class="grid">'+rec.map(r=>'<a class="card" href="#/chat/'+r.a.id+'"><div class="card-top">'+tile(r.a)+'<div><h3>'+esc(r.a.name)+'</h3><small class="muted">'+fmtTime(r.u)+'</small></div></div><p>'+esc(r.a.desc||'')+'</p></a>').join('')+'</div>':
-   emptyBox('chat','Пока нет разговоров','Откройте любого агента из каталога, чтобы начать.','<a class="btn primary" href="#/catalog">Открыть каталог</a>'));
+  (rec.length?'<div class="grid">'+rec.map(r=>'<a class="card" href="#/chat/'+r.a.id+'"><div class="card-top">'+tile(r.a)+
+    '<div><h3>'+esc(r.a.name)+'</h3><small class="muted">'+fmtTime(r.u)+'</small></div></div><p>'+esc(r.a.description||'')+'</p></a>').join('')+'</div>':
+   emptyBox('chat','Пока нет разговоров','Откройте любого агента из каталога, чтобы начать.',
+     '<div class="actions" style="justify-content:center"><a class="btn primary" href="#/catalog">Открыть каталог</a><button class="btn" data-action="new-agent">Создать агента</button></div>'));
 }
 
 function catalogItems(){
   const q=S.ui.catQ.trim().toLowerCase();
-  return CATALOG.filter(a=>(S.ui.catCat==='Все'||a.cat===S.ui.catCat)&&(!q||(a.name+' '+a.desc).toLowerCase().includes(q)));
+  return S.catalog.filter(a=>!q||(a.name+' '+(a.description||'')).toLowerCase().includes(q));
 }
 function renderCatalogGrid(){
   const it=catalogItems(),el=document.getElementById('catGrid');
-  el.innerHTML=it.length?it.map(a=>agentCard(a,'cat')).join(''):'<div style="grid-column:1/-1">'+emptyBox('search','Ничего не найдено','Измените запрос или выберите другую категорию.','<button class="btn" data-action="reset-cat">Сбросить фильтры</button>')+'</div>';
+  el.innerHTML = it.length
+    ? it.map(a=>agentCard(a,'catalog')).join('')
+    : '<div style="grid-column:1/-1">'+emptyBox('grid','В каталоге пока пусто',
+        'Никто ещё не опубликовал своих агентов. Создайте агента и нажмите «Опубликовать в каталоге».',
+        '<div class="actions" style="justify-content:center;margin-top:12px"><button class="btn primary" data-action="new-agent">Создать агента</button></div>')+'</div>';
   document.getElementById('catCount').textContent='Найдено: '+it.length;
   hydrateIcons(el);
 }
 function renderCatalog(){
   document.getElementById('view-catalog').innerHTML=
-  '<div class="page-head"><div><p class="eyebrow">Каталог</p><h1>Готовые агенты</h1><p>Выберите агента под задачу или скопируйте его в «Мои агенты» и настройте под себя.</p></div></div>'+
-  '<div class="toolbar"><div class="search"><span class="ico" data-ico="search"></span><input type="search" id="catSearch" placeholder="Поиск по названию и описанию" aria-label="Поиск агентов" value="'+esc(S.ui.catQ)+'"></div><span class="muted" id="catCount" aria-live="polite"></span></div>'+
-  '<div class="chips" role="group" aria-label="Категории" style="margin-bottom:18px">'+CATEGORIES.map(c=>'<button class="chip" data-action="cat" data-cat="'+c+'" aria-pressed="'+(S.ui.catCat===c)+'">'+c+'</button>').join('')+'</div>'+
-  '<div class="grid" id="catGrid"></div>';
+    '<div class="page-head"><div><p class="eyebrow">Каталог</p><h1>Публичные агенты</h1>'+
+    '<p>Агенты, которыми владельцы поделились со всеми. Можно задать вопрос или склонировать себе.</p>'+
+    '</div></div>'+
+    '<div class="toolbar">'+
+      '<div class="search"><span class="ico" data-ico="search"></span>'+
+      '<input type="search" id="catSearch" placeholder="Поиск по названию и описанию" aria-label="Поиск агентов" value="'+esc(S.ui.catQ)+'"></div>'+
+      '<span class="muted" id="catCount" aria-live="polite"></span>'+
+    '</div>'+
+    '<div class="grid" id="catGrid"></div>';
   renderCatalogGrid();
 }
 
 function renderAgents(){
-  document.getElementById('view-agents').innerHTML=
-  '<div class="page-head"><div><p class="eyebrow">Мои агенты</p><h1>Ваши агенты</h1><p>Созданные вами агенты видны только в вашем пространстве. В прототипе они хранятся локально в браузере.</p></div><button class="btn primary" data-action="new-agent"><span class="ico" data-ico="plus"></span>Создать агента</button></div>'+
-  (S.agents.length?'<div class="grid">'+S.agents.map(a=>agentCard(a,'mine')).join('')+'</div>':
-   emptyBox('bot','У вас пока нет своих агентов','Создайте первого агента или скопируйте готового из каталога.','<div class="actions" style="justify-content:center"><button class="btn primary" data-action="new-agent">Создать агента</button><a class="btn" href="#/catalog">Открыть каталог</a></div>'));
+  const isAdmin = S.me && S.me.role === 'admin';
+  const mine = S.agents.filter(a => a.is_owner);
+  const shared = S.agents.filter(a => a.is_shared_with_me);
+  const foreign = isAdmin
+    ? S.agents.filter(a => !a.is_owner && !a.is_shared_with_me)
+    : [];
+  const empty = !mine.length && !shared.length && !foreign.length;
+
+  let html =
+    '<div class="page-head"><div>'+
+      '<p class="eyebrow">Мои агенты</p><h1>Агенты</h1>'+
+      '<p>'+(isAdmin
+        ? 'Как администратор вы видите и можете редактировать всех агентов системы.'
+        : 'Создавайте агентов, прикрепляйте свои документы и делитесь с коллегами.')+'</p>'+
+    '</div>'+
+    '<button class="btn primary" data-action="new-agent"><span class="ico" data-ico="plus"></span>Создать агента</button></div>';
+
+  if(empty){
+    html +=
+      '<div class="empty">'+
+        '<span class="ico" data-ico="bot"></span>'+
+        '<b>У вас пока нет агентов</b>'+
+        '<span>Создайте своего или склонируйте готового из каталога.</span>'+
+        '<div class="actions" style="justify-content:center;margin-top:12px">'+
+          '<button class="btn primary" data-action="new-agent"><span class="ico" data-ico="plus"></span>Создать агента</button>'+
+          '<a class="btn" href="#/catalog"><span class="ico" data-ico="grid"></span>Открыть каталог</a>'+
+        '</div>'+
+      '</div>';
+  } else {
+    if(mine.length){
+      html += '<div class="section-title"><h2>Созданные мной</h2></div>'+
+        '<div class="grid">'+mine.map(a=>agentCard(a,'mine')).join('')+'</div>';
+    }
+    if(shared.length){
+      html += '<div class="section-title" style="margin-top:24px"><h2>Поделились со мной</h2></div>'+
+        '<div class="grid">'+shared.map(a=>agentCard(a,'shared')).join('')+'</div>';
+    }
+    if(foreign.length){
+      html += '<div class="section-title" style="margin-top:24px"><h2>Все агенты (админ)</h2></div>'+
+        '<div class="grid">'+foreign.map(a=>agentCard(a,'shared')).join('')+'</div>';
+    }
+  }
+
+  document.getElementById('view-agents').innerHTML = html;
 }
 
 function histItems(){
   const q=S.ui.histQ.trim().toLowerCase();
-  return Object.keys(S.convs).map(id=>({a:getAgent(id),c:S.convs[id]})).filter(x=>x.a&&x.c.messages.length)
-   .filter(x=>!q||(x.a.name+' '+x.c.messages.map(m=>m.text).join(' ')).toLowerCase().includes(q))
-   .sort((x,y)=>y.c.updated-x.c.updated);
+  return Object.keys(S.convs).map(id=>({a:getAgent(id),c:S.convs[id]}))
+    .filter(x=>x.a&&x.c.messages.length)
+    .filter(x=>!q||(x.a.name+' '+x.c.messages.map(m=>m.text).join(' ')).toLowerCase().includes(q))
+    .sort((x,y)=>y.c.updated-x.c.updated);
 }
 function renderHistList(){
   const it=histItems(),el=document.getElementById('histList');
   el.innerHTML=it.length?'<div class="list">'+it.map(x=>{
     const last=x.c.messages[x.c.messages.length-1];
-    return '<a class="row" href="#/chat/'+x.a.id+'">'+tile(x.a)+'<div class="row-main"><b>'+esc(x.a.name)+'</b><small>'+(last.role==='user'?'Вы: ':'')+esc(last.text)+'</small></div><span class="row-meta">'+fmtTime(x.c.updated)+'</span></a>';
-  }).join('')+'</div>':emptyBox('clock',S.ui.histQ?'Ничего не найдено':'История пуста',S.ui.histQ?'Попробуйте другой запрос.':'Начните разговор с любым агентом.',S.ui.histQ?'':'<a class="btn primary" href="#/catalog">Выбрать агента</a>');
+    return '<a class="row" href="#/chat/'+x.a.id+'">'+tile(x.a)+
+      '<div class="row-main"><b>'+esc(x.a.name)+'</b><small>'+(last.role==='user'?'Вы: ':'')+esc(last.text)+'</small></div>'+
+      '<span class="row-meta">'+fmtTime(x.c.updated)+'</span></a>';
+  }).join('')+'</div>':
+    emptyBox('clock',S.ui.histQ?'Ничего не найдено':'История пуста',
+      S.ui.histQ?'Попробуйте другой запрос.':'Начните разговор с любым агентом.',
+      S.ui.histQ?'':'<a class="btn primary" href="#/catalog">Выбрать агента</a>');
   hydrateIcons(el);
 }
 function renderHistory(){
   document.getElementById('view-history').innerHTML=
-  '<div class="page-head"><div><p class="eyebrow">История</p><h1>История чатов</h1><p>Недавние разговоры с агентами. Записи демонстрационные.</p></div></div>'+
-  '<div class="toolbar"><div class="search"><span class="ico" data-ico="search"></span><input type="search" id="histSearch" placeholder="Поиск по агентам и сообщениям" aria-label="Поиск по истории" value="'+esc(S.ui.histQ)+'"></div></div><div id="histList"></div>';
+    '<div class="page-head"><div><p class="eyebrow">История</p><h1>История чатов</h1>'+
+    '<p>Недавние разговоры с агентами.</p></div></div>'+
+    '<div class="toolbar"><div class="search"><span class="ico" data-ico="search"></span>'+
+    '<input type="search" id="histSearch" placeholder="Поиск по агентам и сообщениям" aria-label="Поиск по истории" value="'+esc(S.ui.histQ)+'"></div></div>'+
+    '<div id="histList"></div>';
   renderHistList();
 }
 
 function renderSettings(){
   document.getElementById('view-settings').innerHTML=
-  '<div class="page-head"><div><p class="eyebrow">Настройки</p><h1>Настройки</h1><p>Раздел-заглушка прототипа.</p></div></div>'+
-  '<div class="set-list"><div class="notice info"><span class="ico" data-ico="info"></span><span>Профиль, вход и управление доступом появятся после подключения Django: здесь нет настоящей авторизации.</span></div>'+
-  '<div class="panel"><b>Демо-данные</b><p class="muted">Сбросьте агентов, документы и историю чатов к исходному состоянию прототипа.</p><div><button class="btn danger" data-action="reset-demo">Сбросить демо-данные</button></div></div></div>';
+    '<div class="page-head"><div><p class="eyebrow">Настройки</p><h1>Настройки</h1><p>Раздел-заглушка.</p></div></div>'+
+    '<div class="set-list"><div class="notice info"><span class="ico" data-ico="info"></span>'+
+    '<span>Агенты и документы хранятся на сервере. История чатов — локально в браузере.</span></div>'+
+    '<div class="panel"><b>Локальные данные</b><p class="muted">Сбросить историю чатов к исходному состоянию.</p>'+
+    '<div><button class="btn danger" data-action="reset-demo">Сбросить историю</button></div></div></div>';
 }
 </script>
 <script>
 /* Раздел «Документы» */
-function docsItems(){
-  const q=S.ui.docQ.trim().toLowerCase();
-  return S.docs.filter(d=>(S.ui.docAgent==='all'||d.agentId===S.ui.docAgent)&&(!q||d.name.toLowerCase().includes(q)));
+
+function docStatusTag(d){
+  const s=(d.status||'').toLowerCase();
+  if(s==='uploaded')   return '<span class="tag ok">Загружен</span>';
+  if(s==='processing') return '<span class="tag warn">Обработка</span>';
+  if(s==='ready')      return '<span class="tag ok">Готов</span>';
+  if(s==='failed')     return '<span class="tag warn">Ошибка</span>';
+  return '<span class="tag">'+esc(d.status||'')+'</span>';
 }
-function statusTag(d){
-  if(d.status==='picked')return '<span class="tag warn">Выбран · не загружен</span>';
-  return '<span class="tag">Демо-запись</span>';
+
+async function renderDocList(){
+  const el=document.getElementById('docList');
+  if(!el)return;
+  el.innerHTML='<p class="muted" style="padding:8px 4px">Загрузка…</p>';
+
+  const qs=new URLSearchParams();
+  if(S.ui.docQ) qs.set('q',S.ui.docQ);
+  if(S.ui.docExt) qs.set('ext',S.ui.docExt);
+  qs.set('limit','500');
+
+  try{
+    const data=await apiFetch('/api/v1/documents?'+qs.toString());
+    S.docs=data.items; S.docsCount=data.total;
+
+    el.innerHTML = data.items.length
+      ? '<div class="list">'+data.items.map(d=>{
+          const ext=(d.filename.split('.').pop()||'').toLowerCase();
+          return '<div class="row">'+
+            '<span class="ext '+esc(ext)+'">'+ext.toUpperCase()+'</span>'+
+            '<div class="row-main">'+
+              '<b title="'+esc(d.filename)+'">'+esc(d.filename)+'</b>'+
+              '<small>Загрузил: '+esc(d.uploaded_by.name)+ (S.me && d.uploaded_by.id !== S.me.id ? ' · <span class="tag warn" style="font-size:11px">чужой</span>' : '')+' · '+fmtTime(new Date(d.created_at).getTime())+'</small>'+
+            '</div>'+
+            '<span class="row-meta">'+fmtSize(d.file_size)+'</span>'+
+            docStatusTag(d)+
+            (d.can_delete?'<button class="icon-btn bad" data-action="del-doc" data-id="'+d.id+'" aria-label="Удалить"><span class="ico" data-ico="trash"></span></button>':'')+
+          '</div>';
+        }).join('')+'</div>'
+      : emptyBox('doc','Документов нет','Загрузите PDF или DOCX — они появятся здесь.');
+
+    hydrateIcons(el);
+    buildNav('docs');
+  }catch(e){
+    el.innerHTML=emptyBox('info','Не удалось загрузить',e.message);
+    hydrateIcons(el);
+  }
 }
-function renderDocList(){
-  const it=docsItems(),el=document.getElementById('docList');
-  el.innerHTML=it.length?'<div class="list">'+it.map(d=>{
-    const a=getAgent(d.agentId);
-    return '<div class="row"><span class="ext '+d.ext+'">'+d.ext.toUpperCase()+'</span><div class="row-main"><b title="'+esc(d.name)+'">'+esc(d.name)+'</b><small>Агент: '+esc(a?a.name:'удалён')+'</small></div><span class="row-meta">'+fmtSize(d.size)+'</span>'+statusTag(d)+
-    '<button class="icon-btn bad" data-action="del-doc" data-id="'+d.id+'" aria-label="Удалить файл '+esc(d.name)+'"><span class="ico" data-ico="trash"></span></button></div>';
-  }).join('')+'</div>':emptyBox('doc','Документов нет','Выберите агента и добавьте файлы слева.');
-  hydrateIcons(el);
-}
-function agentOptions(sel){
-  return '<optgroup label="Мои агенты">'+(S.agents.map(a=>'<option value="'+a.id+'"'+(a.id===sel?' selected':'')+'>'+esc(a.name)+'</option>').join('')||'<option disabled>Нет своих агентов</option>')+'</optgroup>'+
-   '<optgroup label="Каталог">'+CATALOG.map(a=>'<option value="'+a.id+'"'+(a.id===sel?' selected':'')+'>'+esc(a.name)+'</option>').join('')+'</optgroup>';
-}
+
 function renderDocs(){
-  const sel=(S.ui.target&&getAgent(S.ui.target))?S.ui.target:(S.agents[0]||CATALOG[0]).id;
   document.getElementById('view-docs').innerHTML=
-  '<div class="page-head"><div><p class="eyebrow">Документы</p><h1>Документация агентов</h1><p>Прикрепляйте файлы к конкретному агенту, чтобы он опирался на них в ответах.</p></div></div>'+
-  '<div class="notice"><span class="ico" data-ico="info"></span><span><b>Прототип без сервера.</b> Файлы только выбираются в браузере — фактическая загрузка, хранение и обработка требуют подключения Django backend.</span></div>'+
-  '<div class="docs-layout"><div class="panel"><div class="field" style="margin:0"><label for="docTarget">Агент для документов</label><select id="docTarget">'+agentOptions(sel)+'</select></div>'+
-  '<label class="drop" id="dropZone" for="fileInput"><span class="ico" data-ico="upload"></span><b>Перетащите файлы сюда</b><small>PDF, DOCX, TXT, MD, CSV · до '+MAX_FILE_MB+' МБ</small><span class="btn sm">Выбрать файлы</span></label>'+
-  '<input type="file" id="fileInput" multiple accept=".pdf,.docx,.txt,.md,.csv" hidden>'+
-  '<button class="btn" data-action="demo-doc"><span class="ico" data-ico="plus"></span>Добавить демо-документ</button></div>'+
-  '<div><div class="toolbar"><div class="search"><span class="ico" data-ico="search"></span><input type="search" id="docSearch" placeholder="Поиск по имени файла" aria-label="Поиск документов" value="'+esc(S.ui.docQ)+'"></div>'+
-  '<select id="docFilter" aria-label="Фильтр по агенту" style="width:auto;max-width:240px"><option value="all">Все агенты</option>'+agentOptions(S.ui.docAgent)+'</select></div><div id="docList"></div></div></div>';
-  renderDocList();
+    '<div class="page-head"><div>'+
+      '<p class="eyebrow">Документы</p><h1>Документация</h1>'+
+      '<p>Загружайте PDF и DOCX. Администратор видит все файлы; пользователь — только свои.</p>'+
+    '</div></div>'+
+    '<div class="docs-layout">'+
+      '<div class="panel">'+
+        '<label class="drop" id="dropZone" for="fileInput">'+
+          '<span class="ico" data-ico="upload"></span>'+
+          '<b>Перетащите файлы сюда</b>'+
+          '<small>PDF, DOCX · до '+MAX_FILE_MB+' МБ</small>'+
+          '<span class="btn sm">Выбрать файлы</span>'+
+        '</label>'+
+        '<input type="file" id="fileInput" multiple accept=".pdf,.docx" hidden>'+
+        '<p class="hint muted" id="uploadStatus"></p>'+
+      '</div>'+
+      '<div>'+
+        '<div class="toolbar">'+
+          '<div class="search"><span class="ico" data-ico="search"></span>'+
+          '<input type="search" id="docSearch" placeholder="Поиск по имени файла" aria-label="Поиск документов" value="'+esc(S.ui.docQ)+'"></div>'+
+          '<div class="chips" role="group" aria-label="Расширение">'+
+            ['Все','PDF','DOCX'].map(x=>{
+              const v=x==='Все'?'':x.toLowerCase();
+              const on=(S.ui.docExt||'')===v;
+              return '<button class="chip" data-action="docext" data-ext="'+v+'" aria-pressed="'+on+'">'+x+'</button>';
+            }).join('')+
+          '</div>'+
+        '</div>'+
+        '<div id="docList"></div>'+
+      '</div>'+
+    '</div>';
+
+  hydrateIcons(document.getElementById('view-docs'));
   bindDocs();
+  renderDocList();
 }
-function addFiles(files){
-  const target=document.getElementById('docTarget').value;
-  let ok=0,bad=[];
-  Array.from(files).forEach(f=>{
-    const ext=(f.name.split('.').pop()||'').toLowerCase();
-    if(!ALLOWED_EXT.includes(ext)){bad.push('«'+f.name+'» — формат .'+ext+' не поддерживается');return;}
-    if(f.size>MAX_FILE_MB*1048576){bad.push('«'+f.name+'» — больше '+MAX_FILE_MB+' МБ');return;}
-    S.docs.unshift({id:uid('d'),agentId:target,name:f.name,ext,size:f.size,status:'picked'});ok++;
-  });
-  if(ok){save('docs');renderDocList();toast('Файлов выбрано: '+ok+'. Загрузка на сервер в прототипе не выполняется.');}
-  if(bad.length)toast('Не добавлено: '+bad.join('; ')+'. Допустимы PDF, DOCX, TXT, MD, CSV.','error');
-}
+
 function bindDocs(){
-  const dz=document.getElementById('dropZone'),fi=document.getElementById('fileInput');
-  fi.onchange=()=>{addFiles(fi.files);fi.value='';};
-  ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('over');}));
-  ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('over');}));
-  dz.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files.length)addFiles(e.dataTransfer.files);});
-  document.getElementById('docTarget').onchange=e=>{S.ui.target=e.target.value;};
-  document.getElementById('docSearch').oninput=e=>{S.ui.docQ=e.target.value;renderDocList();};
-  document.getElementById('docFilter').onchange=e=>{S.ui.docAgent=e.target.value;renderDocList();};
+  const dz=document.getElementById('dropZone');
+  const fi=document.getElementById('fileInput');
+  if(dz&&fi){
+    fi.onchange=()=>{addFiles(fi.files);fi.value='';};
+    ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('over');}));
+    ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('over');}));
+    dz.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files.length)addFiles(e.dataTransfer.files);});
+  }
+  const ds=document.getElementById('docSearch');
+  if(ds) ds.oninput=e=>{S.ui.docQ=e.target.value;renderDocList();};
 }
-function addDemoDoc(){
-  const target=document.getElementById('docTarget').value;
-  const names=[['Регламент.pdf','pdf',913408],['Заметки.md','md',6420],['Инструкция.docx','docx',254976],['Данные.csv','csv',130112],['Черновик.txt','txt',18240]];
-  const n=names[Math.floor(Math.random()*names.length)];
-  S.docs.unshift({id:uid('d'),agentId:target,name:n[0],ext:n[1],size:n[2],status:'demo'});
-  save('docs');renderDocList();toast('Демо-документ «'+n[0]+'» добавлен.');
+
+async function addFiles(files){
+  const list=Array.from(files);
+  if(!list.length)return;
+  const st=document.getElementById('uploadStatus');
+  let ok=0;const bad=[];
+
+  for(let i=0;i<list.length;i++){
+    const f=list[i];
+    const ext=(f.name.split('.').pop()||'').toLowerCase();
+    if(ext!=='pdf'&&ext!=='docx'){bad.push('«'+f.name+'»: только PDF и DOCX');continue;}
+    if(f.size>MAX_FILE_MB*1048576){bad.push('«'+f.name+'»: больше '+MAX_FILE_MB+' МБ');continue;}
+
+    if(st) st.textContent='Загрузка '+(i+1)+' из '+list.length+': '+f.name+'…';
+    const fd=new FormData();fd.append('file',f);
+    try{ await apiFetch('/api/v1/documents',{method:'POST',body:fd}); ok++; }
+    catch(e){ bad.push('«'+f.name+'»: '+e.message); }
+  }
+
+  if(st) st.textContent='';
+  if(ok){ toast('Загружено файлов: '+ok+'.'); await renderDocList(); }
+  if(bad.length) toast('Не загружено: '+bad.join('; '),'error');
+}
+
+async function deleteDoc(id){
+  const btn = document.querySelector('[data-action="del-doc"][data-id="'+id+'"]');
+  const row = btn && btn.closest('.row');
+  const name = (row && row.querySelector('b') && row.querySelector('b').textContent) || 'документ';
+
+  const d = S.docs.find(x => String(x.id) === String(id));
+  const foreign = d && S.me && d.uploaded_by.id !== S.me.id;
+  const msg = foreign
+    ? 'Файл «'+name+'» принадлежит другому пользователю. Удаление необратимо.'
+    : '«'+name+'» будет удалён с сервера без возможности восстановления.';
+
+  if(!(await confirmDlg('Удалить файл?', msg))) return;
+  try{
+    await apiFetch('/api/v1/documents/'+id, {method:'DELETE'});
+    toast('Файл удалён.');
+    await renderDocList();
+  }catch(e){ toast('Не удалось удалить: ' + e.message, 'error'); }
 }
 </script>
 <script>
 /* Окно чата */
 let chatId=null,busy=false;
+
 function msgHtml(m,a){
   const u=m.role==='user';
-  return '<div class="msg '+(u?'user':'agent')+'">'+(u?'':tile(a))+'<div><div class="bubble">'+esc(m.text).replace(/\n/g,'<br>')+'</div><time>'+fmtTime(m.ts)+'</time></div></div>';
+  return '<div class="msg '+(u?'user':'agent')+'">'+(u?'':tile(a))+
+    '<div><div class="bubble">'+esc(m.text).replace(/\n/g,'<br>')+'</div><time>'+fmtTime(m.ts)+'</time></div></div>';
 }
+
 function renderChat(id){
   const a=getAgent(id);
   const v=document.getElementById('view-chat');
@@ -399,38 +611,90 @@ function renderChat(id){
   chatId=id;busy=false;
   const conv=S.convs[id];
   const msgs=conv?conv.messages:[];
+  const owned=a.is_owner||a.can_edit;
+
+  const docs=a.documents||[];
+  const enabled=docs.filter(d=>d.is_enabled);
+  const disabled=docs.filter(d=>!d.is_enabled);
+
+  const docsBlock = docs.length
+    ? '<details class="agent-docs">'+
+        '<summary><span class="ico" data-ico="doc"></span>'+
+          'Документы агента ('+enabled.length+')'+
+          (disabled.length?' · отключено '+disabled.length:'')+
+        '</summary>'+
+        '<ul>'+
+          enabled.map(d=>{
+            const ext=(d.filename.split('.').pop()||'').toLowerCase();
+            return '<li>'+
+              '<span class="ext '+esc(ext)+'">'+ext.toUpperCase()+'</span>'+
+              '<span class="doc-name">'+esc(d.filename)+'</span>'+
+              '<span class="muted">'+fmtSize(d.file_size)+'</span>'+
+            '</li>';
+          }).join('')+
+          disabled.map(d=>{
+            const ext=(d.filename.split('.').pop()||'').toLowerCase();
+            return '<li class="disabled">'+
+              '<span class="ext '+esc(ext)+'">'+ext.toUpperCase()+'</span>'+
+              '<span class="doc-name">'+esc(d.filename)+'</span>'+
+              '<span class="muted">отключён</span>'+
+            '</li>';
+          }).join('')+
+        '</ul>'+
+      '</details>'
+    : '';
+
   v.innerHTML=
-  '<header class="chat-head"><button class="icon-btn" data-action="chat-back" aria-label="Назад"><span class="ico" data-ico="back"></span></button>'+tile(a)+
-  '<div class="grow"><h1>'+esc(a.name)+'</h1><small><span class="dot"></span>Демо-режим · ответы не настоящие</small></div>'+
-  (isMine(id)?'<button class="icon-btn" data-action="edit-agent" data-id="'+id+'" aria-label="Редактировать агента"><span class="ico" data-ico="edit"></span></button>':'')+
-  '<button class="icon-btn" data-action="clear-chat" aria-label="Очистить чат" title="Очистить чат"><span class="ico" data-ico="broom"></span></button></header>'+
+  '<header class="chat-head">'+
+    '<button class="icon-btn" data-action="chat-back" aria-label="Назад"><span class="ico" data-ico="back"></span></button>'+
+    tile(a)+
+    '<div class="grow"><h1>'+esc(a.name)+'</h1>'+
+      '<small><span class="dot"></span>'+(owned?'Мой агент':'Поделились'+(a.owner_name?' · '+esc(a.owner_name):''))+'</small></div>'+
+    (owned?'<button class="icon-btn" data-action="edit-agent" data-id="'+id+'" aria-label="Редактировать"><span class="ico" data-ico="edit"></span></button>':'')+
+    '<button class="icon-btn" data-action="clear-chat" aria-label="Очистить чат" title="Очистить чат"><span class="ico" data-ico="broom"></span></button>'+
+  '</header>'+
   '<div class="chat-body" id="chatBody"><div class="chat-col" id="chatCol">'+
-  '<div class="notice info"><span class="ico" data-ico="info"></span><span>Ответы здесь — заготовки. Для настоящих ответов нужно подключить API AI-агента на стороне Django.</span></div>'+
-  '<div class="welcome">'+tile(a,true)+'<h2>'+esc(a.name)+'</h2><p>'+esc(a.greet||a.desc||'Задайте вопрос, и агент ответит в рамках своих инструкций.')+'</p>'+
-  (docsOf(id).length?'<span class="tag ok">Прикреплено документов: '+docsOf(id).length+'</span>':'')+
-  '<div class="chips">'+(a.tips||['Чем ты можешь помочь?','Расскажи о своих возможностях','Как лучше формулировать запросы?']).map(t=>'<button class="chip" data-action="tip" data-t="'+esc(t)+'">'+esc(t)+'</button>').join('')+'</div></div>'+
-  '<div id="chatMsgs" style="display:contents">'+msgs.map(m=>msgHtml(m,a)).join('')+'</div></div></div>'+
-  '<form class="composer" id="chatForm"><div class="composer-in"><textarea id="chatInput" rows="1" placeholder="Напишите сообщение…" aria-label="Сообщение агенту"></textarea>'+
-  '<button class="send" id="sendBtn" type="submit" aria-label="Отправить" disabled><span class="ico" data-ico="send"></span></button></div><small>Enter — отправить, Shift+Enter — новая строка.</small></form>';
+    '<div class="welcome">'+tile(a,true)+'<h2>'+esc(a.name)+'</h2>'+
+      '<p>'+esc(a.description||'Задайте вопрос, и агент ответит в рамках своих инструкций.')+'</p>'+
+      docsBlock+
+      '<div class="chips">'+
+        ['Чем ты можешь помочь?','Кратко опиши свои возможности','Как лучше формулировать запросы?'].map(t=>
+          '<button class="chip" data-action="tip" data-t="'+esc(t)+'">'+esc(t)+'</button>').join('')+
+      '</div>'+
+    '</div>'+
+    '<div id="chatMsgs" style="display:contents">'+msgs.map(m=>msgHtml(m,a)).join('')+'</div>'+
+  '</div></div>'+
+  '<form class="composer" id="chatForm">'+
+    '<div class="composer-in">'+
+      '<textarea id="chatInput" rows="1" placeholder="Напишите сообщение…" aria-label="Сообщение агенту"></textarea>'+
+      '<button class="send" id="sendBtn" type="submit" aria-label="Отправить" disabled><span class="ico" data-ico="send"></span></button>'+
+    '</div>'+
+    '<small>Enter — отправить, Shift+Enter — новая строка.</small>'+
+  '</form>';
+
   const inp=document.getElementById('chatInput'),btn=document.getElementById('sendBtn');
-  inp.addEventListener('input',()=>{inp.style.height='auto';inp.style.height=Math.min(inp.scrollHeight,160)+'px';btn.disabled=busy||!inp.value.trim();});
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();document.getElementById('chatForm').requestSubmit();}});
+  inp.addEventListener('input',()=>{
+    inp.style.height='auto';
+    inp.style.height=Math.min(inp.scrollHeight,160)+'px';
+    btn.disabled=busy||!inp.value.trim();
+  });
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){
+      e.preventDefault();
+      document.getElementById('chatForm').requestSubmit();
+    }
+  });
   document.getElementById('chatForm').addEventListener('submit',e=>{e.preventDefault();sendMsg(inp.value);});
   scrollChat();
+  hydrateIcons(v);
 }
 function scrollChat(){const b=document.getElementById('chatBody');if(b)b.scrollTop=b.scrollHeight;}
-function demoReply(a,text){
-  const t=text.length>90?text.slice(0,90)+'…':text;
-  const dn=docsOf(a.id).length;
-  let r='Демонстрационный ответ агента «'+a.name+'». Вы написали: «'+t+'».';
-  if(a.instr)r+='\n\nМоя роль: '+a.instr.slice(0,140)+(a.instr.length>140?'…':'');
-  r+='\n\n'+(dn?'К агенту прикреплено документов: '+dn+', но в прототипе они не обрабатываются. ':'')+'Настоящий ответ появится после подключения API AI-агента.';
-  return r;
-}
+
 async function sendMsg(raw){
   const text=(raw||'').trim();
   if(!text||busy||!chatId)return;
   const a=getAgent(chatId),id=chatId;
+  if(!a)return;
   const conv=S.convs[id]||(S.convs[id]={updated:Date.now(),messages:[]});
   const um={role:'user',text,ts:Date.now()};
   conv.messages.push(um);conv.updated=um.ts;save('convs');
@@ -446,24 +710,19 @@ async function sendMsg(raw){
 
   let answer;
   try{
-    const r = await fetch('/api/v1/chat', {
+    const r=await fetch('/api/v1/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        message: text,
-        system_prompt: a.instr || null
-      })
+      body:JSON.stringify({ message:text, system_prompt:a.system_prompt||null })
     });
-    const j = await r.json().catch(()=>null);
+    const j=await r.json().catch(()=>null);
     if(!r.ok){
-      const det = j && (typeof j.detail === 'string' ? j.detail :
-                        (j.detail && (j.detail.message || JSON.stringify(j.detail))) ||
-                        j.message);
-      throw new Error(det || ('Ошибка '+r.status));
+      const det=j&&(typeof j.detail==='string'?j.detail:(j.detail&&(j.detail.message||JSON.stringify(j.detail)))||j.message);
+      throw new Error(det||('Ошибка '+r.status));
     }
-    answer = (j && j.answer) ? j.answer : '(пустой ответ модели)';
+    answer=(j&&j.answer)?j.answer:'(пустой ответ модели)';
   }catch(err){
-    answer = 'Не удалось получить ответ от модели: ' + (err && err.message ? err.message : err);
+    answer='Не удалось получить ответ от модели: '+(err&&err.message?err.message:err);
   }
 
   const am={role:'agent',text:answer,ts:Date.now()};
@@ -478,118 +737,472 @@ async function sendMsg(raw){
     scrollChat();
   }
 }
+
 async function clearChat(){
   if(!chatId||!S.convs[chatId])return toast('Чат уже пуст.');
-  if(!(await confirmDlg('Очистить чат?','Сообщения этого разговора будут удалены из локального прототипа.','Очистить')))return;
+  if(!(await confirmDlg('Очистить чат?','Сообщения этого разговора будут удалены локально.','Очистить')))return;
   delete S.convs[chatId];save('convs');renderChat(chatId);toast('Чат очищен.');
 }
 </script>
 <script>
-/* Маршрутизация, форма агента, делегирование событий */
-const NAV=[['overview','Обзор','home'],['catalog','Каталог','grid'],['agents','Мои агенты','users'],['docs','Документы','doc'],['history','История чатов','clock']];
+/* Маршрутизация, форма агента, share-диалог, делегирование событий */
+const NAV=[['overview','Обзор','home'],['catalog','Каталог','grid'],['agents','Мои агенты','users'],['docs','Документы','doc'],['history','История','clock']];
 const TAB=[['overview','Обзор','home'],['agents','Агенты','users'],['catalog','Каталог','grid'],['docs','Документы','doc'],['history','История','clock']];
 const ROUTES={overview:renderOverview,catalog:renderCatalog,agents:renderAgents,docs:renderDocs,history:renderHistory,settings:renderSettings};
 
 function hydrateIcons(root){(root||document).querySelectorAll('[data-ico]').forEach(el=>{if(!el.firstChild)el.innerHTML=icon(el.dataset.ico);});}
 
-function buildNav(cur){
-  document.getElementById('sideNav').innerHTML=NAV.map(n=>'<a class="nav-item'+(cur===n[0]?' active':'')+'" href="#/'+n[0]+'"'+(cur===n[0]?' aria-current="page"':'')+'><span class="ico">'+icon(n[2])+'</span><span>'+n[1]+'</span>'+(n[0]==='agents'?'<span class="count">'+S.agents.length+'</span>':n[0]==='docs'?'<span class="count">'+S.docs.length+'</span>':'')+'</a>').join('');
-  document.getElementById('tabBar').innerHTML=TAB.map(n=>'<a href="#/'+n[0]+'"'+(cur===n[0]?' class="active" aria-current="page"':'')+'><span class="ico">'+icon(n[2])+'</span>'+n[1]+'</a>').join('');
-  const st=document.querySelector('[data-nav=settings]');st.classList.toggle('active',cur==='settings');
+function currentSection(){
+  const h=(location.hash||'#/overview').replace(/^#\/?/,'').split('/');
+  const name=h[0]||'overview';
+  return name==='chat'?(isMine(h[1])?'agents':'catalog'):name;
 }
-function route(){
+
+function buildNav(cur){
+  document.getElementById('sideNav').innerHTML=NAV.map(n=>
+    '<a class="nav-item'+(cur===n[0]?' active':'')+'" href="#/'+n[0]+'"'+(cur===n[0]?' aria-current="page"':'')+'>'+
+    '<span class="ico">'+icon(n[2])+'</span><span>'+n[1]+'</span>'+
+    (n[0]==='agents'?'<span class="count">'+S.agents.filter(a=>a.is_owner).length+'</span>':
+     n[0]==='docs'?'<span class="count">'+S.docsCount+'</span>':
+     n[0]==='catalog'?'<span class="count">'+S.catalog.length+'</span>':'')+
+    '</a>').join('');
+  document.getElementById('tabBar').innerHTML=TAB.map(n=>
+    '<a href="#/'+n[0]+'"'+(cur===n[0]?' class="active" aria-current="page"':'')+'>'+
+    '<span class="ico">'+icon(n[2])+'</span>'+n[1]+'</a>').join('');
+  const st=document.querySelector('[data-nav=settings]');
+  if(st) st.classList.toggle('active',cur==='settings');
+}
+
+async function route(){
   const h=(location.hash||'#/overview').replace(/^#\/?/,'').split('/');
   let name=h[0]||'overview',arg=h[1];
-  if(name==='chat'&&!(arg&&getAgent(arg)))name='overview';
+  if(name==='chat'&&!arg)name='overview';
   if(name!=='chat'&&!ROUTES[name])name='overview';
+
   document.querySelectorAll('[data-view]').forEach(v=>v.hidden=v.dataset.view!==(name==='chat'?'chat':name));
   document.body.classList.toggle('in-chat',name==='chat');
-  if(name==='chat'){renderChat(arg);document.title=getAgent(arg).name+' — Мнемозина';}
-  else{ROUTES[name]();document.title='Мнемозина';}
+
+  if(name==='chat'){
+    const a=getAgent(arg);
+    if(!a){location.hash='#/overview';return;}
+    renderChat(arg);
+    document.title=a.name+' — Мнемозина';
+  } else {
+    ROUTES[name]();
+    document.title='Мнемозина';
+  }
   buildNav(name==='chat'?(isMine(arg)?'agents':'catalog'):name);
-  const view=document.querySelector('[data-view]:not([hidden])');hydrateIcons(view);hydrateIcons(document.querySelector('.sidebar'));
+  const view=document.querySelector('[data-view]:not([hidden])');
+  hydrateIcons(view);hydrateIcons(document.querySelector('.sidebar'));
   if(name!=='chat')window.scrollTo(0,0);
 }
 
+/* ============ комбобокс документов в форме агента ============ */
+const pickerState = { attached: [], mine: [], checked: new Set() };
+
+function docOwnerId(d){
+  return d.owner_id ?? (d.uploaded_by ? d.uploaded_by.id : null);
+}
+function docOwnerName(d){
+  return d.owner_name ?? (d.uploaded_by ? d.uploaded_by.name : null);
+}
+
+function docRow(d, kind){
+  const checked = pickerState.checked.has(d.id) ? ' checked' : '';
+  const meId = S.me ? Number(S.me.id) : null;
+  const ownerId = docOwnerId(d);
+  const isForeignOwner = meId !== null && ownerId !== null
+    && Number(ownerId) !== meId;
+
+  const ownerTag = (isForeignOwner && docOwnerName(d))
+    ? '<small class="muted">от ' + esc(docOwnerName(d)) + '</small>' : '';
+  const sizeTag = (!isForeignOwner && d.file_size)
+    ? '<small class="muted">' + fmtSize(d.file_size) + '</small>' : '';
+
+  return '<label class="doc-check">' +
+    '<input type="checkbox" data-doc="' + kind + '" value="' + d.id + '"' + checked + '> ' +
+    '<span class="doc-check-name">' + esc(d.filename) + '</span>' +
+    ownerTag + sizeTag +
+  '</label>';
+}
+
+function renderDocsPicker(){
+  const box = document.getElementById('fDocsList');
+  const count = document.getElementById('fDocsCount');
+  if(!box) return;
+
+  const q = ((document.getElementById('fDocsSearch')?.value) || '').trim().toLowerCase();
+  const attached = pickerState.attached;
+  const mine = pickerState.mine.filter(d => !q || d.filename.toLowerCase().includes(q));
+
+  if(count){
+    count.textContent = pickerState.checked.size
+      ? 'Выбрано: ' + pickerState.checked.size
+      : '';
+  }
+
+  if(!attached.length && !mine.length){
+    box.innerHTML = '<p class="picker-empty">' +
+      (q ? 'Ничего не найдено.'
+         : (pickerState.mine.length === 0
+            ? 'Сначала загрузите документы в разделе «Документы».'
+            : 'Нет доступных документов.')) +
+      '</p>';
+    return;
+  }
+
+  let html = '';
+  if(attached.length){
+    html += '<div class="doc-group-label">Унаследованные (от клонирования)</div>';
+    html += attached.map(d => docRow(d, 'attached')).join('');
+  }
+  if(mine.length){
+    html += '<div class="doc-group-label">Мои документы</div>';
+    html += mine.map(d => docRow(d, 'mine')).join('');
+  }
+  box.innerHTML = html;
+}
+
+function openDocsPicker(){ const d=document.getElementById('fDocsList'); if(d)d.hidden=false; }
+function closeDocsPicker(){ const d=document.getElementById('fDocsList'); if(d)d.hidden=true; }
+
 /* форма агента */
-let formIcon='bot',formColor=AGENT_COLORS[0][0];
-function openAgentForm(id,preset){
-  const a=id?S.agents.find(x=>x.id===id):null;
-  const d=a||preset||{name:'',desc:'',instr:'',icon:'bot',color:AGENT_COLORS[0][0]};
+async function openAgentForm(id,preset){
+  await loadDocs();
+  const a=id?S.agents.find(x=>String(x.id)===String(id)):null;
+  const d=a||preset||{name:'',description:'',system_prompt:'',icon:'bot',color:AGENT_COLORS[0][0],document_ids:[]};
+
   document.getElementById('agentDlgTitle').textContent=a?'Редактирование агента':'Новый агент';
   document.getElementById('fId').value=a?a.id:'';
-  document.getElementById('fName').value=d.name;document.getElementById('fDesc').value=d.desc||'';document.getElementById('fInstr').value=d.instr||'';
-  document.getElementById('fCount').textContent=(d.instr||'').length;
-  document.getElementById('fName').closest('.field').classList.remove('invalid');document.getElementById('fNameErr').hidden=true;
-  document.getElementById('iconPicker').innerHTML=AGENT_ICONS.map(i=>'<label><input type="radio" name="ic" value="'+i+'"'+(i===d.icon?' checked':'')+' aria-label="Иконка '+i+'"><span class="opt">'+icon(i)+'</span></label>').join('');
-  document.getElementById('colorPicker').innerHTML=AGENT_COLORS.map(c=>'<label><input type="radio" name="cl" value="'+c[0]+'"'+(c[0]===d.color?' checked':'')+' aria-label="'+c[1]+'"><span class="sw" style="--c:'+c[0]+'"></span></label>').join('');
-  const sv=document.getElementById('fSave');sv.disabled=false;sv.textContent='Сохранить';
+  document.getElementById('fName').value=d.name||'';
+  document.getElementById('fDesc').value=d.description||'';
+  document.getElementById('fInstr').value=d.system_prompt||'';
+  document.getElementById('fCount').textContent=(d.system_prompt||'').length;
+  document.getElementById('fName').closest('.field').classList.remove('invalid');
+  document.getElementById('fNameErr').hidden=true;
+
+  document.getElementById('iconPicker').innerHTML=AGENT_ICONS.map(i=>
+    '<label><input type="radio" name="ic" value="'+i+'"'+(i===d.icon?' checked':'')+' aria-label="Иконка '+i+'"><span class="opt">'+icon(i)+'</span></label>').join('');
+  document.getElementById('colorPicker').innerHTML=AGENT_COLORS.map(c=>
+    '<label><input type="radio" name="cl" value="'+c[0]+'"'+(c[0]===d.color?' checked':'')+' aria-label="'+c[1]+'"><span class="sw" style="--c:'+c[0]+'"></span></label>').join('');
+
+  const allDocs = (a && a.documents) || [];
+  pickerState.attached = allDocs.filter(x => x.is_inherited);
+
+  const ownIds = new Set(S.docs.map(d => d.id));
+  const extraMine = allDocs.filter(d => !d.is_inherited && !ownIds.has(d.id));
+  pickerState.mine = S.docs.concat(extraMine);
+
+  pickerState.checked = new Set(allDocs.filter(x => x.is_enabled).map(x => x.id));
+
+  const searchBox = document.getElementById('fDocsSearch');
+  if(searchBox) searchBox.value = '';
+  closeDocsPicker();
+  renderDocsPicker();
+
+  const sv=document.getElementById('fSave');
+  sv.disabled=false;sv.textContent='Сохранить';
   document.getElementById('agentDlg').showModal();
   setTimeout(()=>document.getElementById('fName').focus(),30);
 }
-function submitAgent(e){
+
+async function submitAgent(e){
   e.preventDefault();
   const name=document.getElementById('fName').value.trim();
   const f=document.getElementById('fName').closest('.field');
-  if(!name){f.classList.add('invalid');document.getElementById('fNameErr').hidden=false;document.getElementById('fName').focus();toast('Укажите название агента.','error');return;}
+  if(!name){f.classList.add('invalid');document.getElementById('fNameErr').hidden=false;document.getElementById('fName').focus();toast('Укажите название.','error');return;}
   f.classList.remove('invalid');document.getElementById('fNameErr').hidden=true;
-  const sv=document.getElementById('fSave');sv.disabled=true;sv.textContent='Сохранение…';
+
+  const sv=document.getElementById('fSave');
+  sv.disabled=true;sv.textContent='Сохранение…';
   const id=document.getElementById('fId').value;
-  const data={name,desc:document.getElementById('fDesc').value.trim(),instr:document.getElementById('fInstr').value.trim(),
-    icon:(document.querySelector('[name=ic]:checked')||{}).value||'bot',color:(document.querySelector('[name=cl]:checked')||{}).value||AGENT_COLORS[0][0]};
-  setTimeout(()=>{
-    let nid=id;
-    if(id){Object.assign(S.agents.find(a=>a.id===id),data);}
-    else{nid=uid('u-');S.agents.unshift(Object.assign({id:nid},data));}
-    save('agents');document.getElementById('agentDlg').close();
-    toast(id?'Изменения сохранены.':'Агент «'+name+'» создан.');
+  const payload={
+    name,
+    description:document.getElementById('fDesc').value.trim()||null,
+    system_prompt:document.getElementById('fInstr').value.trim(),
+    model_name:'qwen',
+    icon:(document.querySelector('[name=ic]:checked')||{}).value||'bot',
+    color:(document.querySelector('[name=cl]:checked')||{}).value||AGENT_COLORS[0][0],
+    document_ids: Array.from(pickerState.checked)
+  };
+
+  try{
+    if(id){
+      await apiFetch('/api/v1/agents/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    } else {
+      await apiFetch('/api/v1/agents',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    }
+    document.getElementById('agentDlg').close();
+    toast(id?'Изменения сохранены.':'Агент создан.');
+    await loadAgents();
     route();
-  },450);
-}
-async function deleteAgent(id){
-  const a=S.agents.find(x=>x.id===id);if(!a)return;
-  if(!(await confirmDlg('Удалить агента?','«'+a.name+'» будет удалён вместе с прикреплёнными документами и историей чата.')))return;
-  S.agents=S.agents.filter(x=>x.id!==id);S.docs=S.docs.filter(d=>d.agentId!==id);delete S.convs[id];
-  save('agents');save('docs');save('convs');toast('Агент удалён.');
-  if(location.hash.startsWith('#/chat/'))location.hash='#/agents';else route();
+  }catch(err){
+    sv.disabled=false;sv.textContent='Сохранить';
+    toast('Ошибка: '+err.message,'error');
+  }
 }
 
+async function deleteAgent(id){
+  const a=S.agents.find(x=>String(x.id)===String(id));
+  if(!a)return;
+  if(!(await confirmDlg('Удалить агента?','«'+a.name+'» будет удалён.')))return;
+  try{
+    await apiFetch('/api/v1/agents/'+id,{method:'DELETE'});
+    toast('Агент удалён.');
+    await loadAgents();
+    await loadCatalog();
+    buildNav(currentSection());
+    route();
+  }catch(e){ toast('Не удалось удалить: '+e.message,'error'); }
+}
+
+async function cloneAgent(id){
+  try{
+    await apiFetch('/api/v1/agents/'+id+'/clone',{method:'POST'});
+    toast('Агент склонирован.');
+    await loadAgents();
+    await loadCatalog();
+    await loadDocs();
+    location.hash='#/agents';
+  }catch(e){ toast('Не удалось клонировать: '+e.message,'error'); }
+}
+
+async function removeSharedAgent(id){
+  const a=S.agents.find(x=>String(x.id)===String(id));
+  if(!a)return;
+  if(!(await confirmDlg('Убрать агента?','«'+a.name+'» больше не будет отображаться у вас в списке.','Убрать')))return;
+  try{
+    await apiFetch('/api/v1/agents/'+id+'/shared-with-me',{method:'DELETE'});
+    toast('Агент убран из вашего списка.');
+    await loadAgents();
+    route();
+  }catch(e){ toast('Ошибка: '+e.message,'error'); }
+}
+
+/* ============ «Поделиться» — диалог ============ */
+/* ============ «Поделиться» — диалог ============ */
+const shareState = {
+  agentId: null,
+  agentName: '',
+  originalPublic: false,
+  pendingPublic: false,
+  originalSharedIds: new Set(),
+  pendingSharedIds: new Set(),
+  users: [],
+};
+
+function renderShareUserDrop(){
+  const drop = document.getElementById('shareUserDrop');
+  const count = document.getElementById('shareUserCount');
+  if(!drop) return;
+
+  const q = ((document.getElementById('shareUserSearch')?.value) || '').trim().toLowerCase();
+  const list = shareState.users.filter(u => !q || (u.name || '').toLowerCase().includes(q));
+
+  if(count){
+    count.textContent = shareState.pendingSharedIds.size
+      ? 'Выбрано: ' + shareState.pendingSharedIds.size
+      : '';
+  }
+
+  if(!shareState.users.length){
+    drop.innerHTML = '<p class="picker-empty">Нет других пользователей.</p>';
+    return;
+  }
+  if(!list.length){
+    drop.innerHTML = '<p class="picker-empty">Ничего не найдено.</p>';
+    return;
+  }
+
+  drop.innerHTML = list.map(u =>
+    '<label class="doc-check">' +
+      '<input type="checkbox" data-uid="' + u.id + '"' +
+        (shareState.pendingSharedIds.has(Number(u.id)) ? ' checked' : '') + '> ' +
+      '<span class="doc-check-name">' + esc(u.name) + '</span>' +
+      '<small class="muted">' + esc(u.role) + '</small>' +
+    '</label>'
+  ).join('');
+
+  // Меняем только локальное состояние. На сервер уйдёт по «Готово».
+  drop.querySelectorAll('input[type=checkbox][data-uid]').forEach(cb => {
+    cb.onchange = () => {
+      const uid = parseInt(cb.dataset.uid, 10);
+      if(!Number.isFinite(uid)) return;
+      if(cb.checked) shareState.pendingSharedIds.add(uid);
+      else           shareState.pendingSharedIds.delete(uid);
+      if(count){
+        count.textContent = shareState.pendingSharedIds.size
+          ? 'Выбрано: ' + shareState.pendingSharedIds.size
+          : '';
+      }
+    };
+  });
+}
+
+function openShareUserDrop(){ const d=document.getElementById('shareUserDrop'); if(d)d.hidden=false; }
+function closeShareUserDrop(){ const d=document.getElementById('shareUserDrop'); if(d)d.hidden=true; }
+
+async function openShareDlg(id){
+  const a = S.agents.find(x => String(x.id) === String(id));
+  if(!a) return;
+
+  let users = [];
+  try{ users = await apiFetch('/api/v1/users?role=user'); }
+  catch(e){ return toast('Не удалось получить пользователей: ' + e.message, 'error'); }
+
+  shareState.agentId = id;
+  shareState.agentName = a.name;
+  shareState.originalPublic = !!a.is_public;
+  shareState.pendingPublic = shareState.originalPublic;
+  shareState.originalSharedIds = new Set((a.share_user_ids || []).map(Number));
+  shareState.pendingSharedIds = new Set(shareState.originalSharedIds);
+  shareState.users = users.filter(u =>Number(u.id) !== Number(a.created_by) && u.role !== 'admin');
+  const sb = document.getElementById('shareUserSearch');
+  if(sb) sb.value = '';
+  const pub = document.getElementById('sharePublic');
+  if(pub) pub.checked = shareState.pendingPublic;
+
+  const t = document.getElementById('shareDlgTitle');
+  if(t) t.textContent = 'Поделиться: ' + shareState.agentName;
+
+  closeShareUserDrop();
+  renderShareUserDrop();
+  document.getElementById('shareDlg').showModal();
+}
+
+async function applyShare(){
+  const id = shareState.agentId;
+  if(!id) return;
+
+  const publicChanged = shareState.pendingPublic !== shareState.originalPublic;
+  const toAdd = [...shareState.pendingSharedIds].filter(x => !shareState.originalSharedIds.has(x));
+  const toRemove = [...shareState.originalSharedIds].filter(x => !shareState.pendingSharedIds.has(x));
+
+  try{
+    if(publicChanged){
+      if(shareState.pendingPublic)
+        await apiFetch('/api/v1/agents/' + id + '/publish', {method:'POST'});
+      else
+        await apiFetch('/api/v1/agents/' + id + '/publish', {method:'DELETE'});
+    }
+
+    for(const uid of toAdd){
+      await apiFetch('/api/v1/agents/' + id + '/share', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({user_id: uid}),
+      });
+    }
+    for(const uid of toRemove){
+      await apiFetch('/api/v1/agents/' + id + '/share/' + uid, {method:'DELETE'});
+    }
+
+    if(publicChanged || toAdd.length || toRemove.length){
+      await loadAgents();
+      await loadCatalog();
+      buildNav(currentSection());
+      toast('Изменения сохранены.');
+    }
+  }catch(e){
+    toast('Ошибка: ' + e.message, 'error');
+  }finally{
+    document.getElementById('shareDlg').close();
+  }
+}
+
+/* ============ Делегирование кликов ============ */
 document.addEventListener('click',async e=>{
   const t=e.target.closest('[data-action]');if(!t)return;
   const id=t.dataset.id;
   switch(t.dataset.action){
-    case 'new-agent':openAgentForm();break;
-    case 'close-agent':document.getElementById('agentDlg').close();break;
-    case 'edit-agent':openAgentForm(id);break;
-    case 'del-agent':deleteAgent(id);break;
-    case 'open-chat':location.hash='#/chat/'+id;break;
-    case 'clone-agent':{const a=getAgent(id);openAgentForm(null,{name:a.name+' (копия)',desc:a.desc,instr:a.instr,icon:a.icon,color:a.color});break;}
-    case 'cat':S.ui.catCat=t.dataset.cat;renderCatalog();hydrateIcons(document.getElementById('view-catalog'));break;
-    case 'reset-cat':S.ui.catCat='Все';S.ui.catQ='';renderCatalog();hydrateIcons(document.getElementById('view-catalog'));break;
-    case 'del-doc':{const d=S.docs.find(x=>x.id===id);if(!d)break;
-      if(await confirmDlg('Удалить файл?','«'+d.name+'» будет убран из списка документов агента.')){S.docs=S.docs.filter(x=>x.id!==id);save('docs');renderDocList();buildNav('docs');toast('Файл удалён из списка.');}break;}
-    case 'demo-doc':addDemoDoc();buildNav('docs');break;
-    case 'chat-back':history.length>1?history.back():(location.hash='#/overview');break;
-    case 'tip':sendMsg(t.dataset.t);break;
-    case 'clear-chat':clearChat();break;
+    case 'new-agent': await openAgentForm(); break;
+    case 'close-agent': document.getElementById('agentDlg').close(); break;
+    case 'edit-agent': await openAgentForm(id); break;
+    case 'del-agent': await deleteAgent(id); break;
+    case 'open-chat': location.hash='#/chat/'+id; break;
+    case 'clone-agent': await cloneAgent(id); break;
+    case 'share-agent': await openShareDlg(id); break;
+    case 'remove-shared': await removeSharedAgent(id); break;
+    case 'apply-share': await applyShare(); break;
+    case 'close-share': document.getElementById('shareDlg').close(); break;
+    case 'del-doc': await deleteDoc(id); break;
+    case 'docext': S.ui.docExt=t.dataset.ext||''; renderDocs(); break;
+    case 'chat-back': history.length>1?history.back():(location.hash='#/overview'); break;
+    case 'tip': sendMsg(t.dataset.t); break;
+    case 'clear-chat': clearChat(); break;
     case 'reset-demo':
-      if(await confirmDlg('Сбросить демо-данные?','Ваши агенты, документы и чаты вернутся к исходному состоянию.','Сбросить')){
-        S.agents=[{id:'u-1',name:'Мой аналитик отчётов',desc:'Разбирает квартальные отчёты и готовит сводки для команды.',instr:'Отвечай кратко, используй списки и выделяй цифры.',icon:'chart',color:'#7c3aed'}];
-        S.docs=[{id:'d1',agentId:'u-1',name:'Отчёт_Q1.pdf',ext:'pdf',size:2411724,status:'demo'}];S.convs=seedConvs();
-        save('agents');save('docs');save('convs');toast('Демо-данные сброшены.');buildNav('settings');
-      }break;
+      if(await confirmDlg('Сбросить историю чатов?','Все локальные чаты вернутся к пустому состоянию.','Сбросить')){
+        S.convs={};save('convs');toast('История чатов очищена.');route();
+      }
+      break;
   }
 });
+
 document.addEventListener('input',e=>{
   if(e.target.id==='catSearch'){S.ui.catQ=e.target.value;renderCatalogGrid();}
   else if(e.target.id==='histSearch'){S.ui.histQ=e.target.value;renderHistList();}
   else if(e.target.id==='fInstr'){document.getElementById('fCount').textContent=e.target.value.length;}
   else if(e.target.id==='fName'&&e.target.value.trim()){e.target.closest('.field').classList.remove('invalid');document.getElementById('fNameErr').hidden=true;}
 });
+
+/* ============ комбобокс документов — обработчики ============ */
+document.getElementById('fDocsSearch')?.addEventListener('focus', openDocsPicker);
+document.getElementById('fDocsSearch')?.addEventListener('click', openDocsPicker);
+document.getElementById('fDocsSearch')?.addEventListener('input', () => { openDocsPicker(); renderDocsPicker(); });
+
+document.addEventListener('click', e => {
+  const combo = document.getElementById('fDocsCombo');
+  if(combo && !combo.contains(e.target)) closeDocsPicker();
+});
+
+document.getElementById('fDocsList')?.addEventListener('change', e => {
+  const cb = e.target.closest('input[type=checkbox][data-doc]');
+  if(!cb) return;
+  const id = parseInt(cb.value, 10);
+  if(!Number.isFinite(id)) return;
+  if(cb.checked) pickerState.checked.add(id);
+  else           pickerState.checked.delete(id);
+  const count = document.getElementById('fDocsCount');
+  if(count){
+    count.textContent = pickerState.checked.size
+      ? 'Выбрано: ' + pickerState.checked.size
+      : '';
+  }
+});
+
+/* ============ share: тумблер публикации (локально) ============ */
+document.getElementById('sharePublic')?.addEventListener('change', e => {
+  shareState.pendingPublic = e.target.checked;
+});
+
+/* ============ share: комбобокс пользователей ============ */
+document.getElementById('shareUserSearch')?.addEventListener('focus', openShareUserDrop);
+document.getElementById('shareUserSearch')?.addEventListener('click', openShareUserDrop);
+document.getElementById('shareUserSearch')?.addEventListener('input', () => {
+  openShareUserDrop();
+  renderShareUserDrop();
+});
+
+document.addEventListener('click', e => {
+  const combo = document.getElementById('shareUserCombo');
+  if(combo && !combo.contains(e.target)) closeShareUserDrop();
+});
+
+
+
+/* ============ старт ============ */
 document.getElementById('agentForm').addEventListener('submit',submitAgent);
-window.addEventListener('hashchange',route);
+
+let appReady = false;
+window.addEventListener('hashchange', () => { if(appReady) route(); });
+
 hydrateIcons(document);
-route();
+
+(async () => {
+  await Promise.all([loadMe(), loadAgents(), loadCatalog(), loadDocs()]);
+  appReady = true;
+  await route();
+})();
 </script>
 <a href="https://samara-tr.gazprom.ru" target="_blank" rel="noopener" style="position:fixed;right:12px;bottom:12px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:rgba(20,20,24,.82);color:#fff;font:500 12px/1 -apple-system,system-ui,'Segoe UI',Roboto,sans-serif;text-decoration:none;opacity:.75;backdrop-filter:blur(6px);box-shadow:0 2px 10px rgba(0,0,0,.25)" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.75">⚡ Сделано в Газпром трансгаз Самара</a></body>
 </html>

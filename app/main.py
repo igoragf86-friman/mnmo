@@ -12,6 +12,9 @@ from app.config import settings
 from app.database import check_database_connection, engine
 from app.qwen import QwenError, qwen_client
 
+from app.routers.documents import router as documents_router
+from app.routers.users import router as users_router
+from app.routers.agents import router as agents_router
 import logging
 
 logger = logging.getLogger(__name__)
@@ -29,6 +32,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(auth_router)
+app.include_router(documents_router)
+app.include_router(users_router)
+app.include_router(agents_router)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
