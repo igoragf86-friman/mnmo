@@ -19,7 +19,8 @@ from app.auth import CurrentUserRequired
 from app.database import get_db
 from app.models import Document, User
 from app.schemas import DocumentListOut, DocumentOut
-from app.storage import StorageError, delete_file, save_upload
+from app.storage import StorageError, delete_file, save_upload, storage_root
+from app.rag import index_document
 
 router = APIRouter(prefix="/api/v1/documents", tags=["documents"])
 
@@ -79,6 +80,10 @@ async def upload_document(
     )
     db.add(doc)
     await db.commit()
+    
+    file_path = storage_root() / meta["storage_path"]
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    await index_document(db, doc, file_path, ext)
 
     doc = (
         await db.execute(

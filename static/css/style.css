@@ -244,7 +244,6 @@ dialog form{display:flex;flex-direction:column;max-height:calc(100vh - 24px)}
   .dlg-foot .btn{flex:1}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
-/* комбобоксы (документы в агенте и пользователи в share) */
 .doc-combo { position: relative; }
 .doc-combo-input {
   display: flex; align-items: center; gap: 8px;
@@ -295,7 +294,6 @@ dialog form{display:flex;flex-direction:column;max-height:calc(100vh - 24px)}
 }
 .picker-empty { font-size: 13px; padding: 8px; margin: 0; color: #888; }
 
-/* share-диалог */
 .share-public-toggle {
   display: flex; gap: 10px; align-items: flex-start;
   padding: 10px 12px; border-radius: 10px;
@@ -313,7 +311,6 @@ dialog form{display:flex;flex-direction:column;max-height:calc(100vh - 24px)}
 
 #shareDlg { width: min(480px, 92vw); }
 
-/* отключённые документы в чате */
 .agent-docs {
   margin: 12px 0 4px;
   border: 1px solid rgba(0,0,0,.08);
@@ -339,3 +336,24 @@ dialog form{display:flex;flex-direction:column;max-height:calc(100vh - 24px)}
 .agent-docs .doc-name {
   flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.bubble.streaming::after {
+  content: "▍";
+  display: inline-block;
+  margin-left: 2px;
+  opacity: .6;
+  animation: blink 1s steps(2, start) infinite;
+}
+@keyframes blink {
+  to { visibility: hidden; }
+}
+.side-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px 12px;
+}
+.side-actions .btn {
+  width: 100%;
+  justify-content: center;
+}
+.side-actions form { display: block; }

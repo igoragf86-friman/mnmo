@@ -25,9 +25,14 @@
       <span class="profile-txt"><b>Игорь Агафонов</b><small>Профиль</small></span>
     </div>
   </div>
-  <form method="post" action="/logout" style="display:inline">
-    <button type="submit">Выйти</button>
-  </form>
+  <div class="side-actions">
+    <button type="button" class="btn sm" data-action="new-user" id="newUserBtn" hidden>
+      <span class="ico" data-ico="plus"></span>Создать пользователя
+    </button>
+    <form method="post" action="/logout" style="display:inline">
+      <button type="submit" class="btn sm">Выйти</button>
+    </form>
+  </div>
 </aside>
 
 <main class="main" id="main" tabindex="-1">
@@ -133,7 +138,35 @@
     </footer>
   </form>
 </dialog>
-
+<dialog id="userDlg" aria-labelledby="userDlgTitle">
+  <form id="userForm" novalidate>
+    <header class="dlg-head">
+      <h2 id="userDlgTitle">Новый пользователь</h2>
+      <button type="button" class="icon-btn" data-action="close-user" aria-label="Закрыть"><span class="ico" data-ico="x"></span></button>
+    </header>
+    <div class="dlg-body">
+      <div class="field">
+        <label for="uName">Логин <span class="req">*</span></label>
+        <input id="uName" maxlength="150" placeholder="Например, ivan.petrov" autocomplete="off" required>
+      </div>
+      <div class="field">
+        <label for="uPass">Пароль <span class="req">*</span></label>
+        <input id="uPass" type="password" minlength="6" maxlength="72" placeholder="Минимум 6 символов" autocomplete="new-password" required>
+      </div>
+      <div class="field">
+        <label for="uRole">Роль</label>
+        <select id="uRole">
+          <option value="user">Пользователь</option>
+          <option value="admin">Администратор</option>
+        </select>
+      </div>
+    </div>
+    <footer class="dlg-foot">
+      <button type="button" class="btn" data-action="close-user">Отмена</button>
+      <button type="submit" class="btn primary" id="uSave">Создать</button>
+    </footer>
+  </form>
+</dialog>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 
 <script>
@@ -598,6 +631,54 @@ async function deleteDoc(id){
 /* Окно чата */
 let chatId=null,busy=false;
 
+/* Markdown: marked (GFM) + DOMPurify + highlight.js, подгружаются динамически */
+let mdReady=false;
+(function(){
+  const B='https://cdn.jsdelivr.net/npm/';
+  const css=document.createElement('link');css.rel='stylesheet';css.href="{{ url_for('static', path='css/github.min.css') }}";document.head.appendChild(css);
+  function load(src){return new Promise(r=>{const s=document.createElement('script');s.src=src;s.onload=()=>r(true);s.onerror=()=>r(false);document.head.appendChild(s);});}
+  Promise.all([load("{{ url_for('static', path='js/marked.min.js') }}"),load("{{ url_for('static', path='js/purify.min.js') }}"),load("{{ url_for('static', path='js/highlight.min.js') }}")]).then(r=>{
+    if(!(r[0]&&r[1]&&window.marked&&window.DOMPurify))return;
+    mdReady=true;
+    if(chatId&&!busy&&/^#\/chat\//.test(location.hash))renderChat(chatId);
+  });
+  document.addEventListener('click',e=>{
+    const b=e.target.closest('.code-copy');if(!b)return;
+    const code=b.closest('.code-block').querySelector('code');
+    const txt=code.textContent;
+    const done=()=>{b.textContent='Скопировано';setTimeout(()=>b.textContent='Копировать',1500);};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done,()=>{});
+    else{const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();try{document.execCommand('copy');done();}catch(_){}t.remove();}
+  });
+})();
+function mdHtml(text){
+  if(!mdReady)return esc(text).replace(/\n/g,'<br>');
+  try{
+    const raw=marked.parse(text,{gfm:true,breaks:true});
+    const clean=DOMPurify.sanitize(raw,{USE_PROFILES:{html:true}});
+    const box=document.createElement('div');box.innerHTML=clean;
+    box.querySelectorAll('a').forEach(a=>{a.target='_blank';a.rel='noopener noreferrer nofollow';});
+    box.querySelectorAll('table').forEach(t=>{const w=document.createElement('div');w.className='md-scroll';t.replaceWith(w);w.appendChild(t);});
+    box.querySelectorAll('pre').forEach(pre=>{
+      const code=pre.querySelector('code');if(!code)return;
+      const m=/language-([\w+#-]+)/.exec(code.className||'');
+      const lang=m?m[1]:'';
+      if(window.hljs){try{
+        if(lang&&hljs.getLanguage(lang))code.innerHTML=hljs.highlight(code.textContent,{language:lang}).value;
+        else code.innerHTML=hljs.highlightAuto(code.textContent).value;
+        code.classList.add('hljs');
+      }catch(_){}}
+      const w=document.createElement('div');w.className='code-block';
+      const h=document.createElement('div');h.className='code-head';
+      const l=document.createElement('span');l.textContent=lang||'текст';
+      const b=document.createElement('button');b.type='button';b.className='code-copy';b.textContent='Копировать';
+      h.appendChild(l);h.appendChild(b);
+      pre.replaceWith(w);w.appendChild(h);w.appendChild(pre);
+    });
+    return '<div class="md">'+box.innerHTML+'</div>';
+  }catch(_){return esc(text).replace(/\n/g,'<br>');}
+}
+
 function msgHtml(m,a){
   const u=m.role==='user';
   return '<div class="msg '+(u?'user':'agent')+'">'+(u?'':tile(a))+
@@ -713,8 +794,11 @@ async function sendMsg(raw){
     const r=await fetch('/api/v1/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ message:text, system_prompt:a.system_prompt||null })
-    });
+      body: JSON.stringify({
+        message: text,
+        system_prompt: a.system_prompt || null,
+        agent_id: Number(chatId),
+      }),    });
     const j=await r.json().catch(()=>null);
     if(!r.ok){
       const det=j&&(typeof j.detail==='string'?j.detail:(j.detail&&(j.detail.message||JSON.stringify(j.detail)))||j.message);
@@ -1069,7 +1153,46 @@ async function openShareDlg(id){
   renderShareUserDrop();
   document.getElementById('shareDlg').showModal();
 }
+function openUserDlg(){
+  document.getElementById('uName').value = '';
+  document.getElementById('uPass').value = '';
+  document.getElementById('uRole').value = 'user';
+  const sv = document.getElementById('uSave');
+  sv.disabled = false;
+  sv.textContent = 'Создать';
+  document.getElementById('userDlg').showModal();
+  setTimeout(() => document.getElementById('uName').focus(), 30);
+}
 
+async function submitUser(e){
+  e.preventDefault();
+  const name = document.getElementById('uName').value.trim();
+  const password = document.getElementById('uPass').value;
+  const role = document.getElementById('uRole').value;
+
+  if (!name) { toast('Укажите логин.', 'error'); return; }
+  if (password.length < 6) { toast('Пароль короче 6 символов.', 'error'); return; }
+
+  const sv = document.getElementById('uSave');
+  sv.disabled = true;
+  sv.textContent = 'Создание…';
+
+  try {
+    await apiFetch('/api/v1/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, password, role }),
+    });
+    document.getElementById('userDlg').close();
+    toast('Пользователь «' + name + '» создан.');
+  } catch (err) {
+    sv.disabled = false;
+    sv.textContent = 'Создать';
+    toast('Не удалось: ' + err.message, 'error');
+  }
+}
+
+document.getElementById('userForm').addEventListener('submit', submitUser);
 async function applyShare(){
   const id = shareState.agentId;
   if(!id) return;
@@ -1124,6 +1247,8 @@ document.addEventListener('click',async e=>{
     case 'share-agent': await openShareDlg(id); break;
     case 'remove-shared': await removeSharedAgent(id); break;
     case 'apply-share': await applyShare(); break;
+    case 'new-user': openUserDlg(); break;
+    case 'close-user': document.getElementById('userDlg').close(); break;
     case 'close-share': document.getElementById('shareDlg').close(); break;
     case 'del-doc': await deleteDoc(id); break;
     case 'docext': S.ui.docExt=t.dataset.ext||''; renderDocs(); break;
@@ -1145,7 +1270,6 @@ document.addEventListener('input',e=>{
   else if(e.target.id==='fName'&&e.target.value.trim()){e.target.closest('.field').classList.remove('invalid');document.getElementById('fNameErr').hidden=true;}
 });
 
-/* ============ комбобокс документов — обработчики ============ */
 document.getElementById('fDocsSearch')?.addEventListener('focus', openDocsPicker);
 document.getElementById('fDocsSearch')?.addEventListener('click', openDocsPicker);
 document.getElementById('fDocsSearch')?.addEventListener('input', () => { openDocsPicker(); renderDocsPicker(); });
@@ -1170,12 +1294,10 @@ document.getElementById('fDocsList')?.addEventListener('change', e => {
   }
 });
 
-/* ============ share: тумблер публикации (локально) ============ */
 document.getElementById('sharePublic')?.addEventListener('change', e => {
   shareState.pendingPublic = e.target.checked;
 });
 
-/* ============ share: комбобокс пользователей ============ */
 document.getElementById('shareUserSearch')?.addEventListener('focus', openShareUserDrop);
 document.getElementById('shareUserSearch')?.addEventListener('click', openShareUserDrop);
 document.getElementById('shareUserSearch')?.addEventListener('input', () => {
@@ -1190,7 +1312,6 @@ document.addEventListener('click', e => {
 
 
 
-/* ============ старт ============ */
 document.getElementById('agentForm').addEventListener('submit',submitAgent);
 
 let appReady = false;
@@ -1200,6 +1321,10 @@ hydrateIcons(document);
 
 (async () => {
   await Promise.all([loadMe(), loadAgents(), loadCatalog(), loadDocs()]);
+  if (S.me && S.me.role === 'admin') {
+    const btn = document.getElementById('newUserBtn');
+    if (btn) btn.hidden = false;
+  }
   appReady = true;
   await route();
 })();

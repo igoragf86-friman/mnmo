@@ -11,10 +11,13 @@ from app.auth import router as auth_router
 from app.config import settings
 from app.database import check_database_connection, engine
 from app.qwen import QwenError, qwen_client
+from app.rag import close_embedding_client
 
+from app.routers.chat import router as chat_router
 from app.routers.documents import router as documents_router
 from app.routers.users import router as users_router
 from app.routers.agents import router as agents_router
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -35,9 +38,16 @@ app.include_router(auth_router)
 app.include_router(documents_router)
 app.include_router(users_router)
 app.include_router(agents_router)
+app.include_router(chat_router)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+@app.on_event("shutdown")
+async def _shutdown():
+    await qwen_client.close()
+    await close_embedding_client()
+
 
 @app.middleware("http")
 async def persist_refreshed_access(request: Request, call_next):
@@ -119,20 +129,3 @@ async def database_health():
             detail="Не удалось подключиться к PostgreSQL",
         ) from None
 
-
-@app.post("/api/v1/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
-    """Отправляет сообщение в Qwen."""
-    try:
-        answer = await qwen_client.chat(
-            message=request.message,
-            system_prompt=request.system_prompt,
-        )
-
-        return ChatResponse(answer=answer)
-
-    except QwenError as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=str(exc),
-        ) from exc

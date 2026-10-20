@@ -1,9 +1,7 @@
-"""Pydantic-схемы для API."""
-
 from __future__ import annotations
 
 from datetime import datetime
-
+from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 class UploaderOut(BaseModel):
@@ -96,3 +94,16 @@ class AgentShareOut(BaseModel):
     user_id: int
     name: str
     role: str
+    
+class ChatIn(BaseModel):
+    message: str = Field(min_length=1, max_length=8000)
+    system_prompt: str | None = None
+    agent_id: int | None = None
+    
+class ChatOut(BaseModel):
+    answer: str
+    
+class UserCreateIn(BaseModel):
+    name: str = Field(min_length=1, max_length=150)
+    password: str = Field(min_length=6, max_length=72)
+    role: Literal["admin", "user"] = "user"
