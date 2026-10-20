@@ -632,23 +632,56 @@ async function deleteDoc(id){
 let chatId=null,busy=false;
 
 /* Markdown: marked (GFM) + DOMPurify + highlight.js, подгружаются динамически */
-let mdReady=false;
-(function(){
-  const B='https://cdn.jsdelivr.net/npm/';
-  const css=document.createElement('link');css.rel='stylesheet';css.href="{{ url_for('static', path='css/github.min.css') }}";document.head.appendChild(css);
-  function load(src){return new Promise(r=>{const s=document.createElement('script');s.src=src;s.onload=()=>r(true);s.onerror=()=>r(false);document.head.appendChild(s);});}
-  Promise.all([load("{{ url_for('static', path='js/marked.min.js') }}"),load("{{ url_for('static', path='js/purify.min.js') }}"),load("{{ url_for('static', path='js/highlight.min.js') }}")]).then(r=>{
-    if(!(r[0]&&r[1]&&window.marked&&window.DOMPurify))return;
-    mdReady=true;
-    if(chatId&&!busy&&/^#\/chat\//.test(location.hash))renderChat(chatId);
-  });
-  document.addEventListener('click',e=>{
-    const b=e.target.closest('.code-copy');if(!b)return;
-    const code=b.closest('.code-block').querySelector('code');
-    const txt=code.textContent;
-    const done=()=>{b.textContent='Скопировано';setTimeout(()=>b.textContent='Копировать',1500);};
-    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done,()=>{});
-    else{const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();try{document.execCommand('copy');done();}catch(_){}t.remove();}
+window.MD_ASSETS = {
+  marked: "{{ url_for('static', path='js/marked.min.js') }}",
+  purify: "{{ url_for('static', path='js/purify.min.js') }}",
+  highlight: "{{ url_for('static', path='js/highlight.min.js') }}",
+  css: "{{ url_for('static', path='css/github.min.css') }}"
+};
+
+let mdReady = false;
+
+(function () {
+  const css = document.createElement('link');
+  css.rel = 'stylesheet';
+  css.href = window.MD_ASSETS.css;
+  document.head.appendChild(css);
+
+  function load(src) {
+    return new Promise(resolve => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => resolve(true);
+      script.onerror = () => {
+        console.error('Не удалось загрузить скрипт:', src);
+        resolve(false);
+      };
+      document.head.appendChild(script);
+    });
+  }
+
+  Promise.all([
+    load(window.MD_ASSETS.marked),
+    load(window.MD_ASSETS.purify),
+    load(window.MD_ASSETS.highlight)
+  ]).then(results => {
+    console.log('Результат загрузки Markdown-библиотек:', results);
+    console.log('Глобальные объекты:', {
+      marked: window.marked,
+      DOMPurify: window.DOMPurify,
+      hljs: window.hljs
+    });
+
+    if (!results.every(Boolean) || !window.marked || !window.DOMPurify) {
+      console.error('Markdown-библиотеки загрузились не полностью');
+      return;
+    }
+
+    mdReady = true;
+
+    if (chatId && !busy && /^#\/chat\//.test(location.hash)) {
+      renderChat(chatId);
+    }
   });
 })();
 function mdHtml(text){
@@ -680,9 +713,15 @@ function mdHtml(text){
 }
 
 function msgHtml(m,a){
-  const u=m.role==='user';
-  return '<div class="msg '+(u?'user':'agent')+'">'+(u?'':tile(a))+
-    '<div><div class="bubble">'+esc(m.text).replace(/\n/g,'<br>')+'</div><time>'+fmtTime(m.ts)+'</time></div></div>';
+  const u = m.role === 'user';
+  const content = u
+    ? esc(m.text).replace(/\n/g, '<br>')
+    : mdHtml(m.text);
+
+  return '<div class="msg ' + (u ? 'user' : 'agent') + '">' +
+    (u ? '' : tile(a)) +
+    '<div><div class="bubble">' + content + '</div>' +
+    '<time>' + fmtTime(m.ts) + '</time></div></div>';
 }
 
 function renderChat(id){
@@ -1064,7 +1103,6 @@ async function removeSharedAgent(id){
 }
 
 /* ============ «Поделиться» — диалог ============ */
-/* ============ «Поделиться» — диалог ============ */
 const shareState = {
   agentId: null,
   agentName: '',
@@ -1163,7 +1201,7 @@ function openUserDlg(){
   document.getElementById('userDlg').showModal();
   setTimeout(() => document.getElementById('uName').focus(), 30);
 }
-
+ /* Функция создания пользователя */
 async function submitUser(e){
   e.preventDefault();
   const name = document.getElementById('uName').value.trim();
@@ -1318,7 +1356,7 @@ let appReady = false;
 window.addEventListener('hashchange', () => { if(appReady) route(); });
 
 hydrateIcons(document);
-
+/* Админка для создания new  пользователей */
 (async () => {
   await Promise.all([loadMe(), loadAgents(), loadCatalog(), loadDocs()]);
   if (S.me && S.me.role === 'admin') {

@@ -357,3 +357,39 @@ dialog form{display:flex;flex-direction:column;max-height:calc(100vh - 24px)}
   justify-content: center;
 }
 .side-actions form { display: block; }
+
+.code-block {
+  margin: 12px 0;
+  overflow: hidden;
+  border: 1px solid #90b2d8;
+  border-radius: 10px;
+  background: #adadb986;
+}
+
+.code-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  color: #0a0a0a;
+  background: #4784d8;
+  border-bottom: 1px solid #30363d;
+  font-size: 10px;
+}
+
+.code-block pre {
+  margin: 0;
+  padding: 14px;
+  overflow-x: auto;
+  background: transparent;
+}
+
+.code-block code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.code-copy {
+  cursor: pointer;
+}
