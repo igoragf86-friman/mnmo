@@ -632,6 +632,7 @@ async function deleteDoc(id){
 let chatId=null,busy=false;
 
 /* Markdown: marked (GFM) + DOMPurify + highlight.js, подгружаются динамически */
+
 window.MD_ASSETS = {
   marked: "{{ url_for('static', path='js/marked.min.js') }}",
   purify: "{{ url_for('static', path='js/purify.min.js') }}",

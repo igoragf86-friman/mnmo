@@ -1,19 +1,158 @@
 <!doctype html>
 <html lang="ru">
+<head>
   <meta charset="utf-8">
-  <title>Вход</title>
-  <h1>Вход</h1>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Мнемозина</title>
 
-  {% if error %}<p style="color:#b00">{{ error }}</p>{% endif %}
+  <!-- Bootstrap 5 -->
+  <link
+    href="{{ url_for('static', path='css/bootstrap.min.css') }}"
+    rel="stylesheet"
+  >
 
-  <form method="post" action="/login">
-    <input type="hidden" name="next" value="{{ next or '/' }}">
-    <label>Логин
-      <input name="username" value="{{ username or '' }}" required autofocus>
-    </label><br>
-    <label>Пароль
-      <input name="password" type="password" required>
-    </label><br>
-    <button type="submit">Войти</button>
-  </form>
+  <style>
+    body {
+      min-height: 100vh;
+      background: #f3f5f8;
+    }
+
+    .login-card {
+      max-width: 440px;
+      width: 100%;
+    }
+
+    .login-image {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+    }
+
+    .carousel-area {
+      max-width: 700px;
+      width: 100%;
+    }
+
+    .carousel-image {
+      height: 260px;
+      object-fit: cover;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container min-vh-100 d-flex flex-column align-items-center justify-content-center py-5">
+
+    <!-- Форма входа -->
+    <section class="card login-card shadow-sm border-0 overflow-hidden">
+      <!-- Картинка над формой -->
+      <img
+        src="{{ url_for('static', path='images/logo_tr.png') }}"
+        style="display: block; width: 90%; height: auto; margin: 30px auto;"
+        class="login-image"
+        alt="Добро пожаловать"
+      >
+
+      <div class="card-body p-4 p-md-5">
+        <h1 class="h3 text-center mb-4">Вход в систему</h1>
+
+        {% if error %}
+          <div class="alert alert-danger" role="alert">
+            {{ error }}
+          </div>
+        {% endif %}
+
+        <form method="post" action="/login">
+          <input type="hidden" name="next" value="{{ next or '/' }}">
+
+          <div class="mb-3">
+            <label for="username" class="form-label">Логин</label>
+            <input
+              id="username"
+              name="username"
+              class="form-control"
+              value="{{ username or '' }}"
+              autocomplete="username"
+              required
+              autofocus
+            >
+          </div>
+
+          <div class="mb-4">
+            <label for="password" class="form-label">Пароль</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              class="form-control"
+              autocomplete="current-password"
+              required
+            >
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100">
+            Войти
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Карусель под формой -->
+    <section class="carousel-area mt-4" aria-label="Галерея">
+      <div id="loginCarousel" class="carousel slide" data-bs-ride="carousel">
+
+        <div class="carousel-indicators">
+          <button type="button" data-bs-target="#loginCarousel" data-bs-slide-to="0"
+                  class="active" aria-current="true" aria-label="Слайд 1"></button>
+          <button type="button" data-bs-target="#loginCarousel" data-bs-slide-to="1"
+                  aria-label="Слайд 2"></button>
+          <button type="button" data-bs-target="#loginCarousel" data-bs-slide-to="2"
+                  aria-label="Слайд 3"></button>
+        </div>
+
+        <div class="carousel-inner rounded-3 shadow-sm">
+          <div class="carousel-item active">
+            <img
+              src="{{ url_for('static', path='images/qwen.jpg') }}"
+              class="d-block w-100 carousel-image"
+              alt="Первое изображение"
+            >
+          </div>
+
+          <div class="carousel-item">
+            <img
+              src="{{ url_for('static', path='images/fastapi.png') }}"
+              class="d-block w-100 carousel-image"
+              alt="Второе изображение"
+            >
+          </div>
+
+          <div class="carousel-item">
+            <img
+              src="{{ url_for('static', path='images/redos.jpg') }}"
+              class="d-block w-100 carousel-image"
+              alt="Третье изображение"
+            >
+          </div>
+        </div>
+
+        <button class="carousel-control-prev" type="button"
+                data-bs-target="#loginCarousel" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Предыдущее</span>
+        </button>
+
+        <button class="carousel-control-next" type="button"
+                data-bs-target="#loginCarousel" data-bs-slide="next">
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Следующее</span>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Нужен для работы карусели и других интерактивных компонентов Bootstrap -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
