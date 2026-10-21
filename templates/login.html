@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Мнемозина</title>
+  <link rel="icon" href="{{ url_for('static', path='images/favicon.ico') }}" type="image/x-icon">
 
   <!-- Bootstrap 5 -->
   <link
@@ -48,7 +49,7 @@
       <!-- Картинка над формой -->
       <img
         src="{{ url_for('static', path='images/logo_tr.png') }}"
-        style="display: block; width: 90%; height: auto; margin: 30px auto;"
+        style="display: block; width: 90%; height: auto; margin: 20px auto;"
         class="login-image"
         alt="Добро пожаловать"
       >
@@ -153,6 +154,6 @@
   </main>
 
   <!-- Нужен для работы карусели и других интерактивных компонентов Bootstrap -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', path='js/bootstrap.bundle.min.js') }}"></script>
 </body>
 </html>

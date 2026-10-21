@@ -393,3 +393,11 @@ dialog form{display:flex;flex-direction:column;max-height:calc(100vh - 24px)}
 .code-copy {
   cursor: pointer;
 }
+.doc-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.doc-upload-row .hint { margin: 0; }

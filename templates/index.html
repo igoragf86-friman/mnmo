@@ -82,6 +82,13 @@
           </div>
           <div class="doc-combo-drop" id="fDocsList" hidden></div>
         </div>
+        <div class="doc-upload-row">
+          <button type="button" class="btn sm" data-action="upload-agent-doc">
+            <span class="ico" data-ico="upload"></span>Загрузить документ
+          </button>
+          <input type="file" id="fDocsFileInput" accept=".pdf,.docx" hidden>
+          <span class="hint muted" id="fDocsUploadStatus"></span>
+        </div>
       </fieldset>
       <fieldset class="field"><legend>Иконка</legend><div class="picker" id="iconPicker"></div></fieldset>
       <fieldset class="field"><legend>Цветовой акцент</legend><div class="picker" id="colorPicker"></div></fieldset>
@@ -1316,6 +1323,51 @@ document.getElementById('fDocsSearch')?.addEventListener('input', () => { openDo
 document.addEventListener('click', e => {
   const combo = document.getElementById('fDocsCombo');
   if(combo && !combo.contains(e.target)) closeDocsPicker();
+});
+
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-action="upload-agent-doc"]')) {
+    document.getElementById('fDocsFileInput').click();
+  }
+});
+
+document.getElementById('fDocsFileInput')?.addEventListener('change', async e => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';   // позволяем выбрать тот же файл повторно
+  if (!file) return;
+
+  const st = document.getElementById('fDocsUploadStatus');
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+
+  if (ext !== 'pdf' && ext !== 'docx') {
+    toast('Поддерживаются только PDF и DOCX', 'error');
+    return;
+  }
+  if (file.size > MAX_FILE_MB * 1048576) {
+    toast('Файл больше ' + MAX_FILE_MB + ' МБ', 'error');
+    return;
+  }
+
+  if (st) st.textContent = 'Загрузка «' + file.name + '»…';
+
+  const fd = new FormData();
+  fd.append('file', file);
+
+  try {
+    const doc = await apiFetch('/api/v1/documents', { method: 'POST', body: fd });
+
+    S.docs.unshift(doc);
+    pickerState.mine.unshift(doc);
+    pickerState.checked.add(doc.id);
+
+    renderDocsPicker();
+
+    if (st) st.textContent = 'Загружено: ' + doc.filename;
+    toast('Документ «' + doc.filename + '» загружен.');
+  } catch (err) {
+    if (st) st.textContent = '';
+    toast('Не удалось загрузить: ' + err.message, 'error');
+  }
 });
 
 document.getElementById('fDocsList')?.addEventListener('change', e => {
