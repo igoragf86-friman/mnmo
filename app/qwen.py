@@ -64,6 +64,7 @@ class QwenClient:
         message: str,
         system_prompt: str | None,
         context: str | None,
+        history: list[dict] | None = None,
     ) -> list[dict]:
         final_system = (system_prompt or "").strip()
 
@@ -72,12 +73,12 @@ class QwenClient:
                 "Ты отвечаешь на вопрос строго на основе предоставленных "
                 "фрагментов документов.\n\n"
                 "Правила:\n"
-                "1. Опирайся на фрагменты ниже.\n"
-                "2. Если в них есть прямой ответ — раскрой его подробно: контекст, детали, "
-                "цифры, выводы. Не ограничивайся одним предложением, если вопрос этого "
-                "требует.\n"
-                "3. Если в фрагментах ответа нет — так и скажи: «В предоставленных "
-                "документах этой информации нет».\n"
+                "1. Используй только информацию из фрагментов ниже.\n"
+                "2. Учитывай историю диалога — но отвечай на текущий вопрос.\n"
+                "3. Если в фрагментах нет ответа — скажи: "
+                "«В предоставленных документах этой информации нет».\n"
+                "4. Ссылайся на фрагменты: [1], [2][3].\n\n"
+                "Фрагменты документов:\n\n"
             )
             final_system = (
                 (final_system + "\n\n" if final_system else "")
@@ -88,6 +89,14 @@ class QwenClient:
         messages: list[dict] = []
         if final_system:
             messages.append({"role": "system", "content": final_system})
+
+        if history:
+            for m in history:
+                role = m.get("role")
+                content = m.get("content")
+                if role in ("user", "assistant") and content:
+                    messages.append({"role": role, "content": content})
+
         messages.append({"role": "user", "content": message})
         return messages
 
@@ -110,8 +119,9 @@ class QwenClient:
         message: str,
         system_prompt: str | None = None,
         context: str | None = None,
+        history: list[dict] | None = None,
     ) -> str:
-        messages = self._build_messages(message, system_prompt, context)
+        messages = self._build_messages(message, system_prompt, context, history)
         payload = self._payload(messages, stream=False)
 
         try:
@@ -150,14 +160,14 @@ class QwenClient:
                 "Не удалось разобрать ответ llama.cpp."
             ) from exc
 
-
     async def chat_stream(
         self,
         message: str,
         system_prompt: str | None = None,
         context: str | None = None,
+        history: list[dict] | None = None,
     ) -> AsyncIterator[str]:
-        messages = self._build_messages(message, system_prompt, context)
+        messages = self._build_messages(message, system_prompt, context, history)
         payload = self._payload(messages, stream=True)
 
         try:
@@ -200,6 +210,4 @@ class QwenClient:
             raise QwenError(
                 "Не удалось подключиться к llama.cpp server."
             ) from exc
-
-
 qwen_client = QwenClient()

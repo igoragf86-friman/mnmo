@@ -95,15 +95,43 @@ class AgentShareOut(BaseModel):
     name: str
     role: str
     
+class MessageOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    role: str
+    content: str
+    created_at: datetime
+
+
+class ConversationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    agent_id: int
+    agent_name: str | None = None
+    title: str | None = None
+    created_at: datetime
+    updated_at: datetime
+    message_count: int = 0
+    last_message: str | None = None
+
+
+class ConversationDetailOut(ConversationOut):
+    messages: list[MessageOut] = Field(default_factory=list)
+
+
 class ChatIn(BaseModel):
     message: str = Field(min_length=1, max_length=8000)
     system_prompt: str | None = None
     agent_id: int | None = None
-    
+    conversation_id: int | None = None
+
+
 class ChatOut(BaseModel):
     answer: str
+    conversation_id: int
     
 class UserCreateIn(BaseModel):
     name: str = Field(min_length=1, max_length=150)
     password: str = Field(min_length=6, max_length=72)
     role: Literal["admin", "user"] = "user"
+    

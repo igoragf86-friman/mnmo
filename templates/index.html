@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<script>(function(){var base=location.pathname.replace(/\/+$/,'');var vid=null;try{vid=localStorage.getItem('tz_vid');if(!vid){vid=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('tz_vid',vid)}}catch(e){vid='anon'}var TK='tz_member_'+base;function tok(){try{return localStorage.getItem(TK)}catch(e){return null}}function setTok(t){try{t?localStorage.setItem(TK,t):localStorage.removeItem(TK)}catch(e){}}async function req(m,p,b){var h={'Content-Type':'application/json','X-Tz-Visitor':vid};var t=tok();if(t){h['Authorization']='Bearer '+t}var r=await fetch(base+p,{method:m,headers:h,body:b?JSON.stringify(b):undefined});var j=null;try{j=await r.json()}catch(e){}if(!r.ok){if(r.status===401&&t&&p.indexOf('/auth/')<0){setTok(null)}throw new Error((j&&j.detail)||('Ошибка '+r.status))}return j}var D='/data/';var member=null;window.tz={save:function(c,d){return req('POST',D+c,{data:d})},saveMine:function(c,d){return req('POST',D+c,{data:d,once:true})},vote:function(c,choice,extra){var d=Object.assign({choice:choice},extra||{});return req('POST',D+c,{data:d,once:true})},mine:function(c){return req('GET',D+c+'/mine').then(function(j){return j.record})},list:function(c,o){o=o||{};return req('GET',D+c+'?limit='+(o.limit||100)+'&offset='+(o.offset||0)+(o.mine?'&mine=1':'')).then(function(j){return j.items})},stats:function(c){return req('GET',D+c+'/stats')},update:function(c,id,d){return req('PUT',D+c+'/'+id,{data:d})},remove:function(c,id){return req('DELETE',D+c+'/'+id)},signup:function(l,p,n){return req('POST','/auth/signup',{login:l,password:p,name:n||null}).then(function(j){setTok(j.token);member=j.member;return j.member})},login:function(l,p){return req('POST','/auth/login',{login:l,password:p}).then(function(j){setTok(j.token);member=j.member;return j.member})},logout:function(){setTok(null);member=null;return Promise.resolve()},me:function(){if(!tok())return Promise.resolve(null);if(member)return Promise.resolve(member);return req('GET','/auth/me').then(function(j){member=j.member;return member}).catch(function(){return null})},visitor:vid};})()</script><link rel="icon" href="{{ url_for('static', path='favicon.ico') }}" type="image/x-icon"><style>[hidden]:not([hidden="until-found"]){display:none!important}</style>
+<script>(function(){var base=location.pathname.replace(/\/+$/,'');var vid=null;try{vid=localStorage.getItem('tz_vid');if(!vid){vid=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('tz_vid',vid)}}catch(e){vid='anon'}var TK='tz_member_'+base;function tok(){try{return localStorage.getItem(TK)}catch(e){return null}}function setTok(t){try{t?localStorage.setItem(TK,t):localStorage.removeItem(TK)}catch(e){}}async function req(m,p,b){var h={'Content-Type':'application/json','X-Tz-Visitor':vid};var t=tok();if(t){h['Authorization']='Bearer '+t}var r=await fetch(base+p,{method:m,headers:h,body:b?JSON.stringify(b):undefined});var j=null;try{j=await r.json()}catch(e){}if(!r.ok){if(r.status===401&&t&&p.indexOf('/auth/')<0){setTok(null)}throw new Error((j&&j.detail)||('Ошибка '+r.status))}return j}var D='/data/';var member=null;window.tz={save:function(c,d){return req('POST',D+c,{data:d})},saveMine:function(c,d){return req('POST',D+c,{data:d,once:true})},vote:function(c,choice,extra){var d=Object.assign({choice:choice},extra||{});return req('POST',D+c,{data:d,once:true})},mine:function(c){return req('GET',D+c+'/mine').then(function(j){return j.record})},list:function(c,o){o=o||{};return req('GET',D+c+'?limit='+(o.limit||100)+'&offset='+(o.offset||0)+(o.mine?'&mine=1':'')).then(function(j){return j.items})},stats:function(c){return req('GET',D+c+'/stats')},update:function(c,id,d){return req('PUT',D+c+'/'+id,{data:d})},remove:function(c,id){return req('DELETE',D+c+'/'+id)},signup:function(l,p,n){return req('POST','/auth/signup',{login:l,password:p,name:n||null}).then(function(j){setTok(j.token);member=j.member;return j.member})},login:function(l,p){return req('POST','/auth/login',{login:l,password:p}).then(function(j){setTok(j.token);member=j.member;return j.member})},logout:function(){setTok(null);member=null;return Promise.resolve()},me:function(){if(!tok())return Promise.resolve(null);if(member)return Promise.resolve(member);return req('GET','/auth/me').then(function(j){member=j.member;return member}).catch(function(){return null})},visitor:vid};})()</script><link rel="icon" href="{{ url_for('static', path='images/favicon.ico') }}" type="image/x-icon"><style>[hidden]:not([hidden="until-found"]){display:none!important}</style>
 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -221,14 +221,15 @@ const Store={
 const now=Date.now(),H=3600e3,D=24*H;
 function seedConvs(){return {};}
 
-const S={
-  me:null,          
-  agents:[],
-  catalog:[],
-  docs:[],
-  docsCount:0,
-  convs:Store.get('convs',seedConvs()),
-  ui:{catQ:'',docQ:'',docExt:'',histQ:''}
+const S = {
+  me: null,
+  agents: [],
+  catalog: [],
+  docs: [],
+  docsCount: 0,
+  conversations: [],       
+  chats: {},             
+  ui: { catQ:'', docQ:'', docExt:'', histQ:'' }
 };
 function save(k){Store.set(k,S[k]);}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -244,8 +245,15 @@ function fmtTime(ts){
   return d.toLocaleDateString('ru-RU',{day:'numeric',month:'short'});
 }
 function recentAgents(n){
-  return Object.keys(S.convs).map(id=>({a:getAgent(id),u:S.convs[id].updated}))
-    .filter(x=>x.a).sort((x,y)=>y.u-x.u).slice(0,n);
+  return (S.conversations || [])
+    .map(c => ({
+      a: getAgent(c.agent_id),
+      u: new Date(c.updated_at).getTime(),
+      conv: c,
+    }))
+    .filter(x => x.a)
+    .sort((x, y) => y.u - x.u)
+    .slice(0, n);
 }
 function tile(a,lg){return '<span class="tile'+(lg?' lg':'')+'" style="--c:'+esc(a.color||'#4f46e5')+'">'+icon(a.icon||'bot')+'</span>';}
 function toast(text,type){
@@ -304,10 +312,41 @@ async function loadDocs(){
     S.docsCount = d.total || 0;
   }catch(e){ S.docs=[]; S.docsCount=0; }
 }
+async function loadConversations() {
+  try {
+    S.conversations = await apiFetch('/api/v1/conversations?limit=100');
+  } catch (e) { S.conversations = []; }
+}
 
+async function loadConversation(agentId) {
+  let conv = null;
+  try {
+    const list = await apiFetch('/api/v1/conversations?agent_id=' + agentId + '&limit=1');
+    conv = list[0] || null;
+  } catch (_) { /* нет переписки */ }
+
+  if (!conv) {
+    S.chats[agentId] = { convId: null, messages: [] };
+    return S.chats[agentId];
+  }
+
+  try {
+    const detail = await apiFetch('/api/v1/conversations/' + conv.id);
+    S.chats[agentId] = {
+      convId: detail.id,
+      messages: (detail.messages || []).map(m => ({
+        role: m.role === 'assistant' ? 'agent' : m.role,
+        text: m.content,
+        ts: new Date(m.created_at).getTime(),
+      })),
+    };
+  } catch (_) {
+    S.chats[agentId] = { convId: null, messages: [] };
+  }
+  return S.chats[agentId];
+}
 </script>
 <script>
-/* Обзор, каталог, агенты, история, настройки */
 
 function agentCard(a,mode){
   const owned = a.is_owner || a.can_edit;
@@ -459,25 +498,42 @@ function histItems(){
     .filter(x=>!q||(x.a.name+' '+x.c.messages.map(m=>m.text).join(' ')).toLowerCase().includes(q))
     .sort((x,y)=>y.c.updated-x.c.updated);
 }
-function renderHistList(){
-  const it=histItems(),el=document.getElementById('histList');
-  el.innerHTML=it.length?'<div class="list">'+it.map(x=>{
-    const last=x.c.messages[x.c.messages.length-1];
-    return '<a class="row" href="#/chat/'+x.a.id+'">'+tile(x.a)+
-      '<div class="row-main"><b>'+esc(x.a.name)+'</b><small>'+(last.role==='user'?'Вы: ':'')+esc(last.text)+'</small></div>'+
-      '<span class="row-meta">'+fmtTime(x.c.updated)+'</span></a>';
-  }).join('')+'</div>':
-    emptyBox('clock',S.ui.histQ?'Ничего не найдено':'История пуста',
-      S.ui.histQ?'Попробуйте другой запрос.':'Начните разговор с любым агентом.',
-      S.ui.histQ?'':'<a class="btn primary" href="#/catalog">Выбрать агента</a>');
+function renderHistList() {
+  const q = S.ui.histQ.trim().toLowerCase();
+  const it = S.conversations
+    .filter(c => !q || (
+      (c.agent_name || '') + ' ' + (c.last_message || '')
+    ).toLowerCase().includes(q));
+
+  const el = document.getElementById('histList');
+  el.innerHTML = it.length
+    ? '<div class="list">' + it.map(c => {
+        const a = getAgent(c.agent_id);
+        const tileHtml = a ? tile(a) : '<span class="tile" data-ico="bot"></span>';
+        const last = (c.last_message || '').slice(0, 120);
+        const dt = fmtTime(new Date(c.updated_at).getTime());
+        return '<a class="row" href="#/chat/' + c.agent_id + '">' + tileHtml +
+          '<div class="row-main">' +
+            '<b>' + esc(c.agent_name || 'Агент #' + c.agent_id) + '</b>' +
+            '<small>' + esc(last) + '</small>' +
+          '</div>' +
+          '<span class="row-meta">' + dt + ' · ' + c.message_count + ' сообщ.</span>' +
+          '<button class="icon-btn bad" data-action="del-conv" data-id="' + c.id + '" title="Удалить"><span class="ico" data-ico="trash"></span></button>' +
+        '</a>';
+      }).join('') + '</div>'
+    : emptyBox('clock', 'История пуста', 'Начните разговор с любым агентом.',
+        '<a class="btn primary" href="#/catalog">Выбрать агента</a>');
   hydrateIcons(el);
 }
-function renderHistory(){
-  document.getElementById('view-history').innerHTML=
-    '<div class="page-head"><div><p class="eyebrow">История</p><h1>История чатов</h1>'+
-    '<p>Недавние разговоры с агентами.</p></div></div>'+
-    '<div class="toolbar"><div class="search"><span class="ico" data-ico="search"></span>'+
-    '<input type="search" id="histSearch" placeholder="Поиск по агентам и сообщениям" aria-label="Поиск по истории" value="'+esc(S.ui.histQ)+'"></div></div>'+
+
+async function renderHistory() {
+  await loadConversations();
+  document.getElementById('view-history').innerHTML =
+    '<div class="page-head"><div><p class="eyebrow">История</p><h1>История чатов</h1>' +
+    '<p>Все ваши переписки с агентами.</p></div></div>' +
+    '<div class="toolbar"><div class="search"><span class="ico" data-ico="search"></span>' +
+    '<input type="search" id="histSearch" placeholder="Поиск по агентам и сообщениям" ' +
+    'aria-label="Поиск по истории" value="' + esc(S.ui.histQ) + '"></div></div>' +
     '<div id="histList"></div>';
   renderHistList();
 }
@@ -692,32 +748,66 @@ let mdReady = false;
     }
   });
 })();
-function mdHtml(text){
-  if(!mdReady)return esc(text).replace(/\n/g,'<br>');
+function mdHtml(text, opts){
+  opts = opts || {};
+  if(!mdReady) return esc(text).replace(/\n/g,'<br>');
   try{
-    const raw=marked.parse(text,{gfm:true,breaks:true});
-    const clean=DOMPurify.sanitize(raw,{USE_PROFILES:{html:true}});
-    const box=document.createElement('div');box.innerHTML=clean;
-    box.querySelectorAll('a').forEach(a=>{a.target='_blank';a.rel='noopener noreferrer nofollow';});
-    box.querySelectorAll('table').forEach(t=>{const w=document.createElement('div');w.className='md-scroll';t.replaceWith(w);w.appendChild(t);});
-    box.querySelectorAll('pre').forEach(pre=>{
-      const code=pre.querySelector('code');if(!code)return;
-      const m=/language-([\w+#-]+)/.exec(code.className||'');
-      const lang=m?m[1]:'';
-      if(window.hljs){try{
-        if(lang&&hljs.getLanguage(lang))code.innerHTML=hljs.highlight(code.textContent,{language:lang}).value;
-        else code.innerHTML=hljs.highlightAuto(code.textContent).value;
-        code.classList.add('hljs');
-      }catch(_){}}
-      const w=document.createElement('div');w.className='code-block';
-      const h=document.createElement('div');h.className='code-head';
-      const l=document.createElement('span');l.textContent=lang||'текст';
-      const b=document.createElement('button');b.type='button';b.className='code-copy';b.textContent='Копировать';
-      h.appendChild(l);h.appendChild(b);
-      pre.replaceWith(w);w.appendChild(h);w.appendChild(pre);
+    const raw = marked.parse(text, {gfm:true, breaks:true});
+    const clean = DOMPurify.sanitize(raw, {USE_PROFILES:{html:true}});
+    const box = document.createElement('div');
+    box.innerHTML = clean;
+
+    box.querySelectorAll('a').forEach(a => {
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer nofollow';
     });
-    return '<div class="md">'+box.innerHTML+'</div>';
-  }catch(_){return esc(text).replace(/\n/g,'<br>');}
+    box.querySelectorAll('table').forEach(t => {
+      const w = document.createElement('div');
+      w.className = 'md-scroll';
+      t.replaceWith(w);
+      w.appendChild(t);
+    });
+
+    if(!opts.skipHighlight){
+      box.querySelectorAll('pre code').forEach(code => {
+        const m = /language-([\w+#-]+)/.exec(code.className || '');
+        const lang = m ? m[1] : '';
+        if(window.hljs){
+          try{
+            if(lang && hljs.getLanguage(lang)) {
+              code.innerHTML = hljs.highlight(code.textContent, {language:lang}).value;
+            } else {
+              code.innerHTML = hljs.highlightAuto(code.textContent).value;
+            }
+            code.classList.add('hljs');
+          }catch(_){}
+        }
+      });
+    }
+
+    box.querySelectorAll('pre').forEach(pre => {
+      const code = pre.querySelector('code');
+      const m = /language-([\w+#-]+)/.exec((code && code.className) || '');
+      const lang = m ? m[1] : '';
+      const w = document.createElement('div');
+      w.className = 'code-block';
+      const h = document.createElement('div');
+      h.className = 'code-head';
+      const l = document.createElement('span');
+      l.textContent = lang || 'текст';
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'code-copy';
+      b.textContent = 'Копировать';
+      h.appendChild(l); h.appendChild(b);
+      pre.replaceWith(w);
+      w.appendChild(h); w.appendChild(pre);
+    });
+
+    return '<div class="md">' + box.innerHTML + '</div>';
+  }catch(_){
+    return esc(text).replace(/\n/g,'<br>');
+  }
 }
 
 function msgHtml(m,a){
@@ -732,13 +822,34 @@ function msgHtml(m,a){
     '<time>' + fmtTime(m.ts) + '</time></div></div>';
 }
 
-function renderChat(id){
+async function renderChat(id){
   const a=getAgent(id);
   const v=document.getElementById('view-chat');
   if(!a){location.hash='#/catalog';return;}
   chatId=id;busy=false;
-  const conv=S.convs[id];
-  const msgs=conv?conv.messages:[];
+
+  // грузим переписку с сервера (если ещё не в памяти)
+  let state = S.chats[id];
+  if(!state){
+    state = { convId: null, messages: [] };
+    S.chats[id] = state;
+
+    try{
+      const list = await apiFetch('/api/v1/conversations?agent_id=' + id + '&limit=1');
+      const conv = list[0] || null;
+      if(conv){
+        const detail = await apiFetch('/api/v1/conversations/' + conv.id);
+        state.convId = detail.id;
+        state.messages = (detail.messages || []).map(m => ({
+          role: m.role === 'assistant' ? 'agent' : m.role,
+          text: m.content,
+          ts: new Date(m.created_at).getTime(),
+        }));
+      }
+    }catch(_){ /* нет переписки — ок */ }
+  }
+
+  const msgs = state.messages;
   const owned=a.is_owner||a.can_edit;
 
   const docs=a.documents||[];
@@ -823,60 +934,161 @@ async function sendMsg(raw){
   if(!text||busy||!chatId)return;
   const a=getAgent(chatId),id=chatId;
   if(!a)return;
-  const conv=S.convs[id]||(S.convs[id]={updated:Date.now(),messages:[]});
+
+  const state = S.chats[id] || (S.chats[id] = { convId: null, messages: [] });
   const um={role:'user',text,ts:Date.now()};
-  conv.messages.push(um);conv.updated=um.ts;save('convs');
+  state.messages.push(um);
 
   const box=document.getElementById('chatMsgs'),inp=document.getElementById('chatInput');
   box.insertAdjacentHTML('beforeend',msgHtml(um,a));
   inp.value='';inp.style.height='auto';busy=true;
   document.getElementById('sendBtn').disabled=true;
+
+  const typingId='typing-'+Date.now();
   box.insertAdjacentHTML('beforeend',
-    '<div class="msg agent typing" id="typing" aria-label="Агент печатает">'+tile(a)+
+    '<div class="msg agent typing" id="'+typingId+'" aria-label="Агент печатает">'+tile(a)+
     '<div class="bubble"><i></i><i></i><i></i></div></div>');
   scrollChat();
 
-  let answer;
-  try{
-    const r=await fetch('/api/v1/chat',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        message: text,
-        system_prompt: a.system_prompt || null,
-        agent_id: Number(chatId),
-      }),    });
-    const j=await r.json().catch(()=>null);
-    if(!r.ok){
-      const det=j&&(typeof j.detail==='string'?j.detail:(j.detail&&(j.detail.message||JSON.stringify(j.detail)))||j.message);
-      throw new Error(det||('Ошибка '+r.status));
-    }
-    answer=(j&&j.answer)?j.answer:'(пустой ответ модели)';
-  }catch(err){
-    answer='Не удалось получить ответ от модели: '+(err&&err.message?err.message:err);
+  let answerText='';
+  let errorMsg=null;
+  let bubbleEl=null, timeEl=null, agentBlockEl=null;
+
+  const STREAM_MD_INTERVAL = 500;
+  let lastMdPaint = 0;
+
+  function ensureBubble(){
+    if(bubbleEl) return;
+    const ty=document.getElementById(typingId);
+    if(ty) ty.remove();
+    const wrapper=document.createElement('div');
+    wrapper.className='msg agent';
+    wrapper.innerHTML=tile(a)+'<div><div class="bubble streaming"></div><time></time></div>';
+    box.appendChild(wrapper);
+    bubbleEl=wrapper.querySelector('.bubble');
+    timeEl=wrapper.querySelector('time');
+    agentBlockEl=wrapper;
   }
 
-  const am={role:'agent',text:answer,ts:Date.now()};
-  conv.messages.push(am);conv.updated=am.ts;save('convs');
-
-  if(chatId===id){
-    const ty=document.getElementById('typing');if(ty)ty.remove();
-    document.getElementById('chatMsgs').insertAdjacentHTML('beforeend',msgHtml(am,a));
-    busy=false;
-    const i=document.getElementById('chatInput');
-    document.getElementById('sendBtn').disabled=!i.value.trim();
+  function paint(force){
+    ensureBubble();
+    const now=Date.now();
+    if(!force && now-lastMdPaint < STREAM_MD_INTERVAL) return;
+    lastMdPaint=now;
+    bubbleEl.innerHTML = mdHtml(answerText, {skipHighlight: !force});
     scrollChat();
   }
+
+  try{
+    const resp=await fetch('/api/v1/chat/stream',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      credentials:'same-origin',
+      body:JSON.stringify({
+        message:text,
+        system_prompt:a.system_prompt||null,
+        agent_id:Number(chatId),
+        conversation_id: state.convId,
+      }),
+    });
+
+    if(resp.status===401){
+      location.href='/login?next='+encodeURIComponent(location.pathname);
+      return;
+    }
+    if(resp.status===404){
+      throw new Error('Эндпоинт /api/v1/chat/stream не найден на сервере');
+    }
+    if(!resp.ok){
+      const j=await resp.json().catch(()=>null);
+      const det=j&&(typeof j.detail==='string'?j.detail:JSON.stringify(j.detail));
+      throw new Error(det||('Ошибка '+resp.status));
+    }
+
+    const newConvId = resp.headers.get('X-Conversation-Id');
+    if(newConvId) state.convId = Number(newConvId);
+
+    const reader=resp.body.getReader();
+    const decoder=new TextDecoder();
+    let buffer='';
+
+    outer: while(true){
+      const {done,value}=await reader.read();
+      if(done) break;
+      buffer+=decoder.decode(value,{stream:true});
+
+      let idx;
+      while((idx=buffer.indexOf('\n\n'))>=0){
+        const rawEvent=buffer.slice(0,idx);
+        buffer=buffer.slice(idx+2);
+        if(!rawEvent.trim()) continue;
+
+        const line=rawEvent.startsWith('data: ')?rawEvent.slice(6):rawEvent;
+        if(line==='[DONE]') break outer;
+
+        let data;
+        try{ data=JSON.parse(line); }catch(e){ continue; }
+
+        if(data.error){ errorMsg=data.error; break outer; }
+        if(data.delta){
+          answerText+=data.delta;
+          paint(false);
+        }
+      }
+    }
+    paint(true);
+  }catch(e){
+    errorMsg=e.message||String(e);
+  }
+
+  const ty=document.getElementById(typingId);
+  if(ty) ty.remove();
+
+  if(errorMsg&&!answerText){
+    answerText='Не удалось получить ответ от модели: '+errorMsg;
+  }else if(errorMsg){
+    answerText+='\n\n[ошибка: '+errorMsg+']';
+  }
+
+  const am={role:'agent',text:answerText,ts:Date.now()};
+  state.messages.push(am);
+
+  if(agentBlockEl){
+    ensureBubble();
+    bubbleEl.classList.remove('streaming');
+    bubbleEl.innerHTML=mdHtml(answerText);
+    if(timeEl) timeEl.textContent=fmtTime(am.ts);
+    scrollChat();
+  }else{
+    box.insertAdjacentHTML('beforeend',msgHtml(am,a));
+  }
+
+  loadConversations().catch(()=>{});
+
+  busy=false;
+  document.getElementById('sendBtn').disabled=!inp.value.trim();
+  scrollChat();
 }
 
 async function clearChat(){
-  if(!chatId||!S.convs[chatId])return toast('Чат уже пуст.');
-  if(!(await confirmDlg('Очистить чат?','Сообщения этого разговора будут удалены локально.','Очистить')))return;
-  delete S.convs[chatId];save('convs');renderChat(chatId);toast('Чат очищен.');
+  const state = chatId ? S.chats[chatId] : null;
+  if(!state || !state.convId) return toast('Чат уже пуст.');
+
+  if(!(await confirmDlg('Очистить чат?',
+    'Все сообщения этой переписки будут удалены с сервера.', 'Очистить'))) return;
+
+  try{
+    await apiFetch('/api/v1/conversations/' + state.convId + '/messages',
+      { method:'DELETE' });
+    state.messages = [];
+    renderChat(chatId);
+    toast('Чат очищен.');
+  }catch(e){
+    toast('Не удалось очистить: ' + e.message, 'error');
+  }
 }
 </script>
 <script>
-/* Маршрутизация, форма агента, share-диалог, делегирование событий */
 const NAV=[['overview','Обзор','home'],['catalog','Каталог','grid'],['agents','Мои агенты','users'],['docs','Документы','doc'],['history','История','clock']];
 const TAB=[['overview','Обзор','home'],['agents','Агенты','users'],['catalog','Каталог','grid'],['docs','Документы','doc'],['history','История','clock']];
 const ROUTES={overview:renderOverview,catalog:renderCatalog,agents:renderAgents,docs:renderDocs,history:renderHistory,settings:renderSettings};
@@ -997,7 +1209,6 @@ function renderDocsPicker(){
 function openDocsPicker(){ const d=document.getElementById('fDocsList'); if(d)d.hidden=false; }
 function closeDocsPicker(){ const d=document.getElementById('fDocsList'); if(d)d.hidden=true; }
 
-/* форма агента */
 async function openAgentForm(id,preset){
   await loadDocs();
   const a=id?S.agents.find(x=>String(x.id)===String(id)):null;
@@ -1083,6 +1294,7 @@ async function deleteAgent(id){
     await loadAgents();
     await loadCatalog();
     buildNav(currentSection());
+    delete S.chats[id]
     route();
   }catch(e){ toast('Не удалось удалить: '+e.message,'error'); }
 }
@@ -1109,8 +1321,6 @@ async function removeSharedAgent(id){
     route();
   }catch(e){ toast('Ошибка: '+e.message,'error'); }
 }
-
-/* ============ «Поделиться» — диалог ============ */
 const shareState = {
   agentId: null,
   agentName: '',
@@ -1301,9 +1511,33 @@ document.addEventListener('click',async e=>{
     case 'chat-back': history.length>1?history.back():(location.hash='#/overview'); break;
     case 'tip': sendMsg(t.dataset.t); break;
     case 'clear-chat': clearChat(); break;
+    case 'del-conv':
+      if (await confirmDlg('Удалить переписку?',
+          'Все сообщения этой переписки будут удалены с сервера.', 'Удалить')) {
+        try {
+          await apiFetch('/api/v1/conversations/' + id, { method: 'DELETE' });
+          await loadConversations();
+          renderHistory();
+          toast('Переписка удалена.');
+        } catch (e) { toast('Ошибка: ' + e.message, 'error'); }
+      }
+      break;
     case 'reset-demo':
-      if(await confirmDlg('Сбросить историю чатов?','Все локальные чаты вернутся к пустому состоянию.','Сбросить')){
-        S.convs={};save('convs');toast('История чатов очищена.');route();
+      if(await confirmDlg('Удалить всю историю чатов?',
+          'Все ваши переписки будут удалены с сервера.', 'Удалить')){
+        try{
+          const list = await apiFetch('/api/v1/conversations?limit=200');
+          for(const c of list){
+            await apiFetch('/api/v1/conversations/' + c.id, { method:'DELETE' });
+          }
+          S.conversations = [];
+          S.chats = {};
+          toast('История очищена.');
+          await loadConversations();
+          route();
+        }catch(e){
+          toast('Не удалось: ' + e.message, 'error');
+        }
       }
       break;
   }
@@ -1333,7 +1567,7 @@ document.addEventListener('click', e => {
 
 document.getElementById('fDocsFileInput')?.addEventListener('change', async e => {
   const file = e.target.files && e.target.files[0];
-  e.target.value = '';   // позволяем выбрать тот же файл повторно
+  e.target.value = ''; 
   if (!file) return;
 
   const st = document.getElementById('fDocsUploadStatus');
@@ -1409,7 +1643,6 @@ let appReady = false;
 window.addEventListener('hashchange', () => { if(appReady) route(); });
 
 hydrateIcons(document);
-/* Админка для создания new  пользователей */
 (async () => {
   await Promise.all([loadMe(), loadAgents(), loadCatalog(), loadDocs()]);
   if (S.me && S.me.role === 'admin') {
