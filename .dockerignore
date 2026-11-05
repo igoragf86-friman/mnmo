@@ -1,0 +1,4 @@
+certbot/
+nginx/certs/
+var/
+models/

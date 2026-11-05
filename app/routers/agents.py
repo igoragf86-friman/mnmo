@@ -86,6 +86,7 @@ async def _docs_for(
             mime_type=doc.mime_type,
             is_enabled=link.is_enabled,
             is_inherited=link.is_inherited,
+            status=doc.status,   
             owner_id=owner.id,
             owner_name=owner.name,
         )
@@ -297,7 +298,15 @@ async def _set_docs(
                 403,
                 f"Нельзя прикреплять чужие документы: {sorted(forbidden)}",
             )
-
+    docs = (await db.execute(
+        select(Document).where(Document.id.in_(requested))
+    )).scalars().all()
+    
+    failed_docs = [d.id for d in docs if d.status == "failed"]
+    if failed_docs:
+        raise HTTPException(
+            400, f"Документы не готовы (ошибка обработки): {failed_docs}"
+        )
     for doc_id in requested:
         if doc_id in current:
             current[doc_id].is_enabled = True

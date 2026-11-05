@@ -50,7 +50,8 @@ class AgentDocOut(BaseModel):
     file_size: int | None
     mime_type: str | None
     is_enabled: bool = True
-    is_inherited: bool = False      
+    is_inherited: bool = False
+    status: str = "ready"          
     owner_id: int | None = None
     owner_name: str | None = None
 

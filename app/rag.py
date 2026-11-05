@@ -2,7 +2,7 @@ from __future__ import annotations
 import re
 import logging
 from pathlib import Path
-
+import asyncio
 import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -155,17 +155,35 @@ class EmbeddingClient:
 
         results: list[list[float]] = []
         client = _get_embed_client()
-        batch_size = 8
+        batch_size = 4  
+
         for i in range(0, len(inputs), batch_size):
             batch = inputs[i:i + batch_size]
-            response = await client.post(
-                f"{self.base_url}/embed",
-                json={"inputs": batch, "normalize": True},
-            )
-            response.raise_for_status()
-            results.extend(response.json())
-        return results
+            
+            max_retries = 5  
+            for attempt in range(max_retries):
+                try:
+                    response = await client.post(
+                        f"{self.base_url}/embed",
+                        json={"inputs": batch, "normalize": True},
+                    )
+                    response.raise_for_status()
+                    results.extend(response.json())
+                    break
+                except httpx.HTTPStatusError as exc:
+                    if exc.response.status_code == 429 and attempt < max_retries - 1:
+                        wait_time = 2 ** (attempt + 1)
+                        logger.warning(
+                            f"TEI вернул 429 (Too Many Requests). "
+                            f"Повтор через {wait_time} сек..."
+                        )
+                        await asyncio.sleep(wait_time)
+                    else:
+                        raise exc  #
+            
+            await asyncio.sleep(0.2) 
 
+        return results
     async def embed_passages(self, texts: list[str]) -> list[list[float]]:
         return await self._embed([f"passage: {t}" for t in texts])
 

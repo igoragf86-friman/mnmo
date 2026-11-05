@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<script>(function(){var base=location.pathname.replace(/\/+$/,'');var vid=null;try{vid=localStorage.getItem('tz_vid');if(!vid){vid=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('tz_vid',vid)}}catch(e){vid='anon'}var TK='tz_member_'+base;function tok(){try{return localStorage.getItem(TK)}catch(e){return null}}function setTok(t){try{t?localStorage.setItem(TK,t):localStorage.removeItem(TK)}catch(e){}}async function req(m,p,b){var h={'Content-Type':'application/json','X-Tz-Visitor':vid};var t=tok();if(t){h['Authorization']='Bearer '+t}var r=await fetch(base+p,{method:m,headers:h,body:b?JSON.stringify(b):undefined});var j=null;try{j=await r.json()}catch(e){}if(!r.ok){if(r.status===401&&t&&p.indexOf('/auth/')<0){setTok(null)}throw new Error((j&&j.detail)||('Ошибка '+r.status))}return j}var D='/data/';var member=null;window.tz={save:function(c,d){return req('POST',D+c,{data:d})},saveMine:function(c,d){return req('POST',D+c,{data:d,once:true})},vote:function(c,choice,extra){var d=Object.assign({choice:choice},extra||{});return req('POST',D+c,{data:d,once:true})},mine:function(c){return req('GET',D+c+'/mine').then(function(j){return j.record})},list:function(c,o){o=o||{};return req('GET',D+c+'?limit='+(o.limit||100)+'&offset='+(o.offset||0)+(o.mine?'&mine=1':'')).then(function(j){return j.items})},stats:function(c){return req('GET',D+c+'/stats')},update:function(c,id,d){return req('PUT',D+c+'/'+id,{data:d})},remove:function(c,id){return req('DELETE',D+c+'/'+id)},signup:function(l,p,n){return req('POST','/auth/signup',{login:l,password:p,name:n||null}).then(function(j){setTok(j.token);member=j.member;return j.member})},login:function(l,p){return req('POST','/auth/login',{login:l,password:p}).then(function(j){setTok(j.token);member=j.member;return j.member})},logout:function(){setTok(null);member=null;return Promise.resolve()},me:function(){if(!tok())return Promise.resolve(null);if(member)return Promise.resolve(member);return req('GET','/auth/me').then(function(j){member=j.member;return member}).catch(function(){return null})},visitor:vid};})()</script><link rel="icon" href="{{ url_for('static', path='images/favicon.ico') }}" type="image/x-icon"><style>[hidden]:not([hidden="until-found"]){display:none!important}</style>
+<script>(function(){var base=location.pathname.replace(/\/+$/,'');var vid=null;try{vid=localStorage.getItem('tz_vid');if(!vid){vid=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('tz_vid',vid)}}catch(e){vid='anon'}var TK='tz_member_'+base;function tok(){try{return localStorage.getItem(TK)}catch(e){return null}}function setTok(t){try{t?localStorage.setItem(TK,t):localStorage.removeItem(TK)}catch(e){}}async function req(m,p,b){var h={'Content-Type':'application/json','X-Tz-Visitor':vid};var t=tok();if(t){h['Authorization']='Bearer '+t}var r=await fetch(base+p,{method:m,headers:h,body:b?JSON.stringify(b):undefined});var j=null;try{j=await r.json()}catch(e){}if(!r.ok){if(r.status===401&&t&&p.indexOf('/auth/')<0){setTok(null)}throw new Error((j&&j.detail)||('Ошибка '+r.status))}return j}var D='/data/';var member=null;window.tz={save:function(c,d){return req('POST',D+c,{data:d})},saveMine:function(c,d){return req('POST',D+c,{data:d,once:true})},vote:function(c,choice,extra){var d=Object.assign({choice:choice},extra||{});return req('POST',D+c,{data:d,once:true})},mine:function(c){return req('GET',D+c+'/mine').then(function(j){return j.record})},list:function(c,o){o=o||{};return req('GET',D+c+'?limit='+(o.limit||100)+'&offset='+(o.offset||0)+(o.mine?'&mine=1':'')).then(function(j){return j.items})},stats:function(c){return req('GET',D+c+'/stats')},update:function(c,id,d){return req('PUT',D+c+'/'+id,{data:d})},remove:function(c,id){return req('DELETE',D+c+'/'+id)},signup:function(l,p,n){return req('POST','/auth/signup',{login:l,password:p,name:n||null}).then(function(j){setTok(j.token);member=j.member;return j.member})},login:function(l,p){return req('POST','/auth/login',{login:l,password:p}).then(function(j){setTok(j.token);member=j.member;return j.member})},logout:function(){setTok(null);member=null;return Promise.resolve()},me:function(){if(!tok())return Promise.resolve(null);if(member)return Promise.resolve(member);return req('GET','/auth/me').then(function(j){member=j.member;return member}).catch(function(){return null})},visitor:vid};})()</script><link rel="icon" href="/static/images/favicon.ico" type="image/x-icon"><style>[hidden]:not([hidden="until-found"]){display:none!important}</style>
 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Мнемозина — рабочее пространство AI-агентов</title>
 <meta name="description" content="Интерфейс для работы с AI-агентами.">
-<link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+<link rel="stylesheet" href="/static/css/style.css">
 <body>
 <a class="skip" href="#main">К содержимому</a>
 
@@ -21,8 +21,11 @@
   <div class="side-bottom">
     <a class="nav-item" href="#/settings" data-nav="settings"><span class="ico" data-ico="settings"></span><span>Настройки</span></a>
     <div class="profile">
-      <span class="avatar" aria-hidden="true">АК</span>
-      <span class="profile-txt"><b>Игорь Агафонов</b><small>Профиль</small></span>
+      <span class="avatar" id="profileAvatar" aria-hidden="true">?</span>
+      <span class="profile-txt">
+        <b id="profileName">Загрузка...</b>
+        <small id="profileRole">...</small>
+      </span>
     </div>
   </div>
   <div class="side-actions">
@@ -228,7 +231,8 @@ const S = {
   docs: [],
   docsCount: 0,
   conversations: [],       
-  chats: {},             
+  chats: {},
+  streams: {},             
   ui: { catQ:'', docQ:'', docExt:'', histQ:'' }
 };
 function save(k){Store.set(k,S[k]);}
@@ -297,6 +301,29 @@ async function loadMe(){
   try{ S.me = await apiFetch('/api/v1/users/me'); }
   catch(e){ S.me = null; }
 }
+
+function renderProfile() {
+  if (!S.me) return;
+
+  const nameEl = document.getElementById('profileName');
+  const roleEl = document.getElementById('profileRole');
+  const avatarEl = document.getElementById('profileAvatar');
+
+  if (nameEl) nameEl.textContent = S.me.name;
+  if (roleEl) roleEl.textContent = S.me.role === 'admin' ? 'Администратор' : 'Пользователь';
+
+  if (avatarEl) {
+    const parts = S.me.name.trim().split(/\s+/);
+    let initials = '?';
+    if (parts.length >= 2) {
+      initials = parts[0][0] + parts[1][0];
+    } else if (parts.length === 1 && parts[0].length > 0) {
+      initials = parts[0].substring(0, 2);
+    }
+    avatarEl.textContent = initials.toUpperCase();
+  }
+}
+
 async function loadAgents(){
   try{ S.agents = (await apiFetch('/api/v1/agents')).items || []; }
   catch(e){ S.agents=[]; }
@@ -697,10 +724,10 @@ let chatId=null,busy=false;
 /* Markdown: marked (GFM) + DOMPurify + highlight.js, подгружаются динамически */
 
 window.MD_ASSETS = {
-  marked: "{{ url_for('static', path='js/marked.min.js') }}",
-  purify: "{{ url_for('static', path='js/purify.min.js') }}",
-  highlight: "{{ url_for('static', path='js/highlight.min.js') }}",
-  css: "{{ url_for('static', path='css/github.min.css') }}"
+  marked: "/static/js/marked.min.js",
+  purify: "/static/js/purify.min.js",
+  highlight: "/static/js/highlight.min.js",
+  css: "/static/css/github.min.css"
 };
 
 let mdReady = false;
@@ -826,9 +853,14 @@ async function renderChat(id){
   const a=getAgent(id);
   const v=document.getElementById('view-chat');
   if(!a){location.hash='#/catalog';return;}
-  chatId=id;busy=false;
+  chatId=id;
+  busy = false;
+  
+  const activeStream = S.streams[id];
+  if (activeStream && activeStream.active) {
+    busy = true;
+  }
 
-  // грузим переписку с сервера (если ещё не в памяти)
   let state = S.chats[id];
   if(!state){
     state = { convId: null, messages: [] };
@@ -850,11 +882,11 @@ async function renderChat(id){
   }
 
   const msgs = state.messages;
-  const owned=a.is_owner||a.can_edit;
+  const owned = a.is_owner || a.can_edit;
 
-  const docs=a.documents||[];
-  const enabled=docs.filter(d=>d.is_enabled);
-  const disabled=docs.filter(d=>!d.is_enabled);
+  const docs = a.documents || [];
+  const enabled = docs.filter(d => d.is_enabled);
+  const disabled = docs.filter(d => !d.is_enabled);
 
   const docsBlock = docs.length
     ? '<details class="agent-docs">'+
@@ -883,6 +915,18 @@ async function renderChat(id){
       '</details>'
     : '';
 
+  let msgsHtml = msgs.map(m => msgHtml(m, a)).join('');
+
+  if (activeStream && activeStream.active) {
+    msgsHtml += '<div class="msg agent" id="live-stream" aria-label="Агент печатает">'+
+      tile(a) +
+      '<div>'+
+        '<div class="bubble streaming">' + mdHtml(activeStream.text, {skipHighlight: true}) + '</div>'+
+        '<time></time>'+
+      '</div>'+
+    '</div>';
+  }
+
   v.innerHTML=
   '<header class="chat-head">'+
     '<button class="icon-btn" data-action="chat-back" aria-label="Назад"><span class="ico" data-ico="back"></span></button>'+
@@ -901,7 +945,7 @@ async function renderChat(id){
           '<button class="chip" data-action="tip" data-t="'+esc(t)+'">'+esc(t)+'</button>').join('')+
       '</div>'+
     '</div>'+
-    '<div id="chatMsgs" style="display:contents">'+msgs.map(m=>msgHtml(m,a)).join('')+'</div>'+
+    '<div id="chatMsgs" style="display:contents">' + msgsHtml + '</div>'+
   '</div></div>'+
   '<form class="composer" id="chatForm">'+
     '<div class="composer-in">'+
@@ -911,7 +955,7 @@ async function renderChat(id){
     '<small>Enter — отправить, Shift+Enter — новая строка.</small>'+
   '</form>';
 
-  const inp=document.getElementById('chatInput'),btn=document.getElementById('sendBtn');
+  const inp=document.getElementById('chatInput'), btn=document.getElementById('sendBtn');
   inp.addEventListener('input',()=>{
     inp.style.height='auto';
     inp.style.height=Math.min(inp.scrollHeight,160)+'px';
@@ -923,12 +967,29 @@ async function renderChat(id){
       document.getElementById('chatForm').requestSubmit();
     }
   });
+  
+  if (busy) {
+    btn.disabled = true;
+  }
+
   document.getElementById('chatForm').addEventListener('submit',e=>{e.preventDefault();sendMsg(inp.value);});
+  
   scrollChat();
   hydrateIcons(v);
 }
 function scrollChat(){const b=document.getElementById('chatBody');if(b)b.scrollTop=b.scrollHeight;}
+function updateStreamUI(id) {
+  const stream = S.streams[id];
+  if (!stream || !stream.active) return;
+  
+  if (String(chatId) !== String(id)) return; 
 
+  const bubble = document.querySelector('#live-stream .bubble');
+  if (bubble) {
+    bubble.innerHTML = mdHtml(stream.text, {skipHighlight: true});
+    scrollChat();
+  }
+}
 async function sendMsg(raw){
   const text=(raw||'').trim();
   if(!text||busy||!chatId)return;
@@ -939,45 +1000,20 @@ async function sendMsg(raw){
   const um={role:'user',text,ts:Date.now()};
   state.messages.push(um);
 
+  S.streams[id] = { text: '', active: true };
+
   const box=document.getElementById('chatMsgs'),inp=document.getElementById('chatInput');
   box.insertAdjacentHTML('beforeend',msgHtml(um,a));
   inp.value='';inp.style.height='auto';busy=true;
   document.getElementById('sendBtn').disabled=true;
 
-  const typingId='typing-'+Date.now();
   box.insertAdjacentHTML('beforeend',
-    '<div class="msg agent typing" id="'+typingId+'" aria-label="Агент печатает">'+tile(a)+
-    '<div class="bubble"><i></i><i></i><i></i></div></div>');
+    '<div class="msg agent" id="live-stream" aria-label="Агент печатает">'+tile(a)+
+    '<div><div class="bubble streaming"></div><time></time></div></div>');
   scrollChat();
 
-  let answerText='';
   let errorMsg=null;
-  let bubbleEl=null, timeEl=null, agentBlockEl=null;
-
-  const STREAM_MD_INTERVAL = 500;
   let lastMdPaint = 0;
-
-  function ensureBubble(){
-    if(bubbleEl) return;
-    const ty=document.getElementById(typingId);
-    if(ty) ty.remove();
-    const wrapper=document.createElement('div');
-    wrapper.className='msg agent';
-    wrapper.innerHTML=tile(a)+'<div><div class="bubble streaming"></div><time></time></div>';
-    box.appendChild(wrapper);
-    bubbleEl=wrapper.querySelector('.bubble');
-    timeEl=wrapper.querySelector('time');
-    agentBlockEl=wrapper;
-  }
-
-  function paint(force){
-    ensureBubble();
-    const now=Date.now();
-    if(!force && now-lastMdPaint < STREAM_MD_INTERVAL) return;
-    lastMdPaint=now;
-    bubbleEl.innerHTML = mdHtml(answerText, {skipHighlight: !force});
-    scrollChat();
-  }
 
   try{
     const resp=await fetch('/api/v1/chat/stream',{
@@ -995,9 +1031,6 @@ async function sendMsg(raw){
     if(resp.status===401){
       location.href='/login?next='+encodeURIComponent(location.pathname);
       return;
-    }
-    if(resp.status===404){
-      throw new Error('Эндпоинт /api/v1/chat/stream не найден на сервере');
     }
     if(!resp.ok){
       const j=await resp.json().catch(()=>null);
@@ -1031,20 +1064,23 @@ async function sendMsg(raw){
 
         if(data.error){ errorMsg=data.error; break outer; }
         if(data.delta){
-          answerText+=data.delta;
-          paint(false);
+          S.streams[id].text += data.delta;
+          
+          const now = Date.now();
+          if (now - lastMdPaint > 500) {
+            lastMdPaint = now;
+            updateStreamUI(id);
+          }
         }
       }
     }
-    paint(true);
+    updateStreamUI(id); 
   }catch(e){
     errorMsg=e.message||String(e);
   }
 
-  const ty=document.getElementById(typingId);
-  if(ty) ty.remove();
-
-  if(errorMsg&&!answerText){
+  let answerText = S.streams[id].text;
+  if(errorMsg && !answerText){
     answerText='Не удалось получить ответ от модели: '+errorMsg;
   }else if(errorMsg){
     answerText+='\n\n[ошибка: '+errorMsg+']';
@@ -1052,22 +1088,26 @@ async function sendMsg(raw){
 
   const am={role:'agent',text:answerText,ts:Date.now()};
   state.messages.push(am);
+  
+  delete S.streams[id];
 
-  if(agentBlockEl){
-    ensureBubble();
-    bubbleEl.classList.remove('streaming');
-    bubbleEl.innerHTML=mdHtml(answerText);
-    if(timeEl) timeEl.textContent=fmtTime(am.ts);
-    scrollChat();
-  }else{
-    box.insertAdjacentHTML('beforeend',msgHtml(am,a));
+  if(String(chatId) === String(id)){
+    const live = document.getElementById('live-stream');
+    if (live) {
+      live.removeAttribute('id');
+      const bubble = live.querySelector('.bubble');
+      bubble.classList.remove('streaming');
+      bubble.innerHTML = mdHtml(answerText);
+      const time = live.querySelector('time');
+      if (time) time.textContent = fmtTime(am.ts);
+      scrollChat();
+    }
   }
 
   loadConversations().catch(()=>{});
-
   busy=false;
-  document.getElementById('sendBtn').disabled=!inp.value.trim();
-  scrollChat();
+  const i=document.getElementById('chatInput');
+  if (i) document.getElementById('sendBtn').disabled=!i.value.trim();
 }
 
 async function clearChat(){
@@ -1228,14 +1268,18 @@ async function openAgentForm(id,preset){
   document.getElementById('colorPicker').innerHTML=AGENT_COLORS.map(c=>
     '<label><input type="radio" name="cl" value="'+c[0]+'"'+(c[0]===d.color?' checked':'')+' aria-label="'+c[1]+'"><span class="sw" style="--c:'+c[0]+'"></span></label>').join('');
 
-  const allDocs = (a && a.documents) || [];
-  pickerState.attached = allDocs.filter(x => x.is_inherited);
+    const allDocs = (a && a.documents) || [];
+  
+  pickerState.attached = allDocs.filter(x => x.is_inherited && x.status !== 'failed');
 
-  const ownIds = new Set(S.docs.map(d => d.id));
-  const extraMine = allDocs.filter(d => !d.is_inherited && !ownIds.has(d.id));
-  pickerState.mine = S.docs.concat(extraMine);
+  const readyDocs = S.docs.filter(d => d.status !== 'failed');
+  const ownIds = new Set(readyDocs.map(d => d.id));
+  const extraMine = allDocs.filter(d => !d.is_inherited && !ownIds.has(d.id) && d.status !== 'failed');
+  pickerState.mine = readyDocs.concat(extraMine);
 
-  pickerState.checked = new Set(allDocs.filter(x => x.is_enabled).map(x => x.id));
+  pickerState.checked = new Set(
+    allDocs.filter(x => x.is_enabled && x.status !== 'failed').map(x => x.id)
+  );
 
   const searchBox = document.getElementById('fDocsSearch');
   if(searchBox) searchBox.value = '';
@@ -1644,7 +1688,10 @@ window.addEventListener('hashchange', () => { if(appReady) route(); });
 
 hydrateIcons(document);
 (async () => {
-  await Promise.all([loadMe(), loadAgents(), loadCatalog(), loadDocs()]);
+  await Promise.all([loadMe(), loadAgents(), loadCatalog(), loadDocs(), loadConversations()]);
+  
+  renderProfile(); 
+
   if (S.me && S.me.role === 'admin') {
     const btn = document.getElementById('newUserBtn');
     if (btn) btn.hidden = false;
