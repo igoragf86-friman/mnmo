@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-
+from app.state import active_generations
 from app.auth import CurrentUserRequired
 from app.database import get_db
 from app.models import Agent, Conversation, Message
@@ -71,7 +71,6 @@ async def list_conversations(
         )
     return result
 
-
 @router.get("/{conv_id}", response_model=ConversationDetailOut)
 async def get_conversation(
     conv_id: int,
@@ -94,6 +93,15 @@ async def get_conversation(
     if conv is None:
         raise HTTPException(404, "Переписка не найдена.")
 
+    is_gen = False
+    if conv.id in active_generations:
+        state = active_generations[conv.id]
+        task = state.get("task")
+        if task and not task.done():
+            is_gen = state.get("active", False)
+        else:
+            active_generations.pop(conv.id, None)
+
     return ConversationDetailOut(
         id=conv.id,
         agent_id=conv.agent_id,
@@ -112,6 +120,7 @@ async def get_conversation(
             )
             for m in conv.messages
         ],
+        is_generating=is_gen,
     )
 
 

@@ -60,11 +60,7 @@ class QwenClient:
 
 
     def _build_messages(
-        self,
-        message: str,
-        system_prompt: str | None,
-        context: str | None,
-        history: list[dict] | None = None,
+        self, message: str, system_prompt: str | None, context: str | None, history: list[dict] | None = None
     ) -> list[dict]:
         final_system = (system_prompt or "").strip()
 
@@ -97,17 +93,16 @@ class QwenClient:
                 if role in ("user", "assistant") and content:
                     messages.append({"role": role, "content": content})
 
-        messages.append({"role": "user", "content": message})
+        messages.append({"role": "user", "content": message + " /no_think"})
         return messages
 
-    def _payload(
-        self, messages: list[dict], stream: bool
-    ) -> dict:
+    def _payload(self, messages: list[dict], stream: bool) -> dict:
         payload = {
             "messages": messages,
             "max_tokens": settings.qwen_max_tokens,
             "temperature": settings.qwen_temperature,
             "stream": stream,
+            "cache_prompt": False,  
         }
         if settings.qwen_model:
             payload["model"] = settings.qwen_model
@@ -166,7 +161,7 @@ class QwenClient:
         system_prompt: str | None = None,
         context: str | None = None,
         history: list[dict] | None = None,
-    ) -> AsyncIterator[str]:
+    ) -> AsyncIterator[dict]:
         messages = self._build_messages(message, system_prompt, context, history)
         payload = self._payload(messages, stream=True)
 
@@ -179,35 +174,29 @@ class QwenClient:
             ) as response:
                 if response.status_code >= 400:
                     body = await response.aread()
-                    raise QwenError(
-                        f"llama.cpp вернул HTTP {response.status_code}: "
-                        f"{body[:200]!r}"
-                    )
+                    raise QwenError(f"llama.cpp вернул HTTP {response.status_code}: {body[:200]!r}")
 
                 async for line in response.aiter_lines():
-                    if not line.startswith("data: "):
-                        continue
+                    if not line.startswith("data: "): continue
                     chunk_str = line[6:].strip()
-                    if not chunk_str or chunk_str == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(chunk_str)
-                    except json.JSONDecodeError:
-                        continue
+                    if not chunk_str or chunk_str == "[DONE]": break
+                    try: chunk = json.loads(chunk_str)
+                    except json.JSONDecodeError: continue
+                    
                     choice = (chunk.get("choices") or [{}])[0]
                     delta = choice.get("delta") or {}
+                    
                     content = delta.get("content")
-                    if content:
-                        yield content
+                    reasoning = delta.get("reasoning_content")
+                    
+                    if content or reasoning:
+                        yield {"content": content or "", "reasoning": reasoning or ""}
+
                     if choice.get("finish_reason") == "length":
-                        logger.warning(
-                            "Стрим Qwen завершён по max_tokens"
-                        )
+                        logger.warning("Стрим Qwen завершён по max_tokens")
 
         except httpx.TimeoutException as exc:
             raise QwenError("Истекло время ожидания ответа Qwen.") from exc
         except httpx.RequestError as exc:
-            raise QwenError(
-                "Не удалось подключиться к llama.cpp server."
-            ) from exc
+            raise QwenError("Не удалось подключиться к llama.cpp server.") from exc
 qwen_client = QwenClient()

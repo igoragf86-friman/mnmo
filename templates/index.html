@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+  <link rel="stylesheet" href="/static/katex/katex.min.css">
+  <script defer src="/static/katex/katex.min.js"></script>
+  <script defer src="/static/katex/contrib/auto-render.min.js"></script>
 <script>(function(){var base=location.pathname.replace(/\/+$/,'');var vid=null;try{vid=localStorage.getItem('tz_vid');if(!vid){vid=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('tz_vid',vid)}}catch(e){vid='anon'}var TK='tz_member_'+base;function tok(){try{return localStorage.getItem(TK)}catch(e){return null}}function setTok(t){try{t?localStorage.setItem(TK,t):localStorage.removeItem(TK)}catch(e){}}async function req(m,p,b){var h={'Content-Type':'application/json','X-Tz-Visitor':vid};var t=tok();if(t){h['Authorization']='Bearer '+t}var r=await fetch(base+p,{method:m,headers:h,body:b?JSON.stringify(b):undefined});var j=null;try{j=await r.json()}catch(e){}if(!r.ok){if(r.status===401&&t&&p.indexOf('/auth/')<0){setTok(null)}throw new Error((j&&j.detail)||('Ошибка '+r.status))}return j}var D='/data/';var member=null;window.tz={save:function(c,d){return req('POST',D+c,{data:d})},saveMine:function(c,d){return req('POST',D+c,{data:d,once:true})},vote:function(c,choice,extra){var d=Object.assign({choice:choice},extra||{});return req('POST',D+c,{data:d,once:true})},mine:function(c){return req('GET',D+c+'/mine').then(function(j){return j.record})},list:function(c,o){o=o||{};return req('GET',D+c+'?limit='+(o.limit||100)+'&offset='+(o.offset||0)+(o.mine?'&mine=1':'')).then(function(j){return j.items})},stats:function(c){return req('GET',D+c+'/stats')},update:function(c,id,d){return req('PUT',D+c+'/'+id,{data:d})},remove:function(c,id){return req('DELETE',D+c+'/'+id)},signup:function(l,p,n){return req('POST','/auth/signup',{login:l,password:p,name:n||null}).then(function(j){setTok(j.token);member=j.member;return j.member})},login:function(l,p){return req('POST','/auth/login',{login:l,password:p}).then(function(j){setTok(j.token);member=j.member;return j.member})},logout:function(){setTok(null);member=null;return Promise.resolve()},me:function(){if(!tok())return Promise.resolve(null);if(member)return Promise.resolve(member);return req('GET','/auth/me').then(function(j){member=j.member;return member}).catch(function(){return null})},visitor:vid};})()</script><link rel="icon" href="/static/images/favicon.ico" type="image/x-icon"><style>[hidden]:not([hidden="until-found"]){display:none!important}</style>
 
 <meta charset="utf-8">
@@ -182,6 +185,7 @@
 <script>
 /* Иконки (24x24, stroke) */
 const ICONS = {
+  stop:'<rect x="6" y="6" width="12" height="12" rx="2"/>',
   bot:'<rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 4v4M9 13v1M15 13v1"/>',
   doc:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
   code:'<path d="M8 8l-5 4 5 4M16 8l5 4-5 4M14 5l-4 14"/>',
@@ -283,6 +287,7 @@ function emptyBox(ic,title,text,btn){
 /* ---------- API ---------- */
 async function apiFetch(path, opts){
   opts = opts || {};
+  opts.cache = 'no-store'; // <-- Отключаем кэширование для GET
   const r = await fetch(path, Object.assign({ credentials:'same-origin' }, opts));
   if(r.status===401){
     location.href='/login?next='+encodeURIComponent(location.pathname+location.search);
@@ -779,11 +784,38 @@ function mdHtml(text, opts){
   opts = opts || {};
   if(!mdReady) return esc(text).replace(/\n/g,'<br>');
   try{
-    const raw = marked.parse(text, {gfm:true, breaks:true});
+    // 1. Прячем математику (используем заглушку без подчеркиваний)
+    const mathBlocks = [];
+    let processedText = text.replace(/\$\$([\s\S]*?)\$\$/g, (match) => {
+      const id = `MATHPLACEHOLDER${mathBlocks.length}`;
+      mathBlocks.push({ id, content: match });
+      return id;
+    });
+    // Строчная математика
+    processedText = processedText.replace(/\$([^$\n]+?)\$/g, (match) => {
+      const id = `MATHPLACEHOLDER${mathBlocks.length}`;
+      mathBlocks.push({ id, content: match });
+      return id;
+    });
+
+    // 2. Парсим Markdown
+    const raw = marked.parse(processedText, {gfm:true, breaks:true});
     const clean = DOMPurify.sanitize(raw, {USE_PROFILES:{html:true}});
     const box = document.createElement('div');
     box.innerHTML = clean;
 
+    // 3. Возвращаем формулы обратно в DOM
+    mathBlocks.forEach(block => {
+      const walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT, null, false);
+      let node;
+      while(node = walker.nextNode()) {
+        if (node.nodeValue.includes(block.id)) {
+          node.nodeValue = node.nodeValue.replace(block.id, block.content);
+        }
+      }
+    });
+
+    // 4. Обработка ссылок и таблиц
     box.querySelectorAll('a').forEach(a => {
       a.target = '_blank';
       a.rel = 'noopener noreferrer nofollow';
@@ -795,23 +827,37 @@ function mdHtml(text, opts){
       w.appendChild(t);
     });
 
+    // 5. Подсветка кода
     if(!opts.skipHighlight){
       box.querySelectorAll('pre code').forEach(code => {
         const m = /language-([\w+#-]+)/.exec(code.className || '');
         const lang = m ? m[1] : '';
         if(window.hljs){
           try{
-            if(lang && hljs.getLanguage(lang)) {
-              code.innerHTML = hljs.highlight(code.textContent, {language:lang}).value;
-            } else {
-              code.innerHTML = hljs.highlightAuto(code.textContent).value;
-            }
+            if(lang && hljs.getLanguage(lang)) code.innerHTML = hljs.highlight(code.textContent, {language:lang}).value;
+            else code.innerHTML = hljs.highlightAuto(code.textContent).value;
             code.classList.add('hljs');
           }catch(_){}
         }
       });
     }
 
+    // 6. Рендер формул KaTeX
+    if (window.renderMathInElement) {
+      try {
+        window.renderMathInElement(box, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false},
+            {left: '\\(', right: '\\)', display: false},
+            {left: '\\[', right: '\\]', display: true}
+          ],
+          throwOnError: false
+        });
+      } catch(e) { console.error('KaTeX error:', e); }
+    }
+
+    // Оборачиваем pre-блоки
     box.querySelectorAll('pre').forEach(pre => {
       const code = pre.querySelector('code');
       const m = /language-([\w+#-]+)/.exec((code && code.className) || '');
@@ -832,7 +878,8 @@ function mdHtml(text, opts){
     });
 
     return '<div class="md">' + box.innerHTML + '</div>';
-  }catch(_){
+  }catch(e){
+    console.error(e);
     return esc(text).replace(/\n/g,'<br>');
   }
 }
@@ -848,24 +895,40 @@ function msgHtml(m,a){
     '<div><div class="bubble">' + content + '</div>' +
     '<time>' + fmtTime(m.ts) + '</time></div></div>';
 }
-
-async function renderChat(id){
-  const a=getAgent(id);
-  const v=document.getElementById('view-chat');
-  if(!a){location.hash='#/catalog';return;}
-  chatId=id;
-  busy = false;
+function scrollChat(){
+  const b = document.getElementById('chatBody');
+  if(b) b.scrollTop = b.scrollHeight;
+}
+function restoreComposerUI() {
+  const stopBtn = document.getElementById('stopBtn');
+  if (stopBtn) stopBtn.remove();
   
-  const activeStream = S.streams[id];
-  if (activeStream && activeStream.active) {
-    busy = true;
+  const composer = document.querySelector('.composer-in');
+  if (composer && !document.getElementById('sendBtn')) {
+    composer.insertAdjacentHTML('beforeend', '<button class="send" id="sendBtn" type="submit" aria-label="Отправить" disabled><span class="ico" data-ico="send"></span></button>');
+    hydrateIcons(composer);
   }
+  
+  const inp = document.getElementById('chatInput');
+  if (inp) { 
+    inp.disabled = false; 
+    inp.placeholder = 'Напишите сообщение…'; 
+    inp.focus(); 
+    inp.dispatchEvent(new Event('input')); 
+  }
+}
+async function renderChat(id){
+  const a = getAgent(id);
+  const v = document.getElementById('view-chat');
+  if(!a){ location.hash = '#/catalog'; return; }
+  chatId = id;
 
   let state = S.chats[id];
+  let isGenerating = false;
+
   if(!state){
     state = { convId: null, messages: [] };
     S.chats[id] = state;
-
     try{
       const list = await apiFetch('/api/v1/conversations?agent_id=' + id + '&limit=1');
       const conv = list[0] || null;
@@ -877,8 +940,17 @@ async function renderChat(id){
           text: m.content,
           ts: new Date(m.created_at).getTime(),
         }));
+        isGenerating = detail.is_generating;
       }
-    }catch(_){ /* нет переписки — ок */ }
+    }catch(_){}
+  } else {
+    isGenerating = !!(S.streams[id] && S.streams[id].active);
+  }
+
+  if (chatId !== id) return;
+
+  if (isGenerating && !S.streams[id]) {
+    S.streams[id] = { text: '', active: true, hasReader: false };
   }
 
   const msgs = state.messages;
@@ -889,225 +961,249 @@ async function renderChat(id){
   const disabled = docs.filter(d => !d.is_enabled);
 
   const docsBlock = docs.length
-    ? '<details class="agent-docs">'+
-        '<summary><span class="ico" data-ico="doc"></span>'+
-          'Документы агента ('+enabled.length+')'+
-          (disabled.length?' · отключено '+disabled.length:'')+
-        '</summary>'+
-        '<ul>'+
-          enabled.map(d=>{
-            const ext=(d.filename.split('.').pop()||'').toLowerCase();
-            return '<li>'+
-              '<span class="ext '+esc(ext)+'">'+ext.toUpperCase()+'</span>'+
-              '<span class="doc-name">'+esc(d.filename)+'</span>'+
-              '<span class="muted">'+fmtSize(d.file_size)+'</span>'+
-            '</li>';
-          }).join('')+
-          disabled.map(d=>{
-            const ext=(d.filename.split('.').pop()||'').toLowerCase();
-            return '<li class="disabled">'+
-              '<span class="ext '+esc(ext)+'">'+ext.toUpperCase()+'</span>'+
-              '<span class="doc-name">'+esc(d.filename)+'</span>'+
-              '<span class="muted">отключён</span>'+
-            '</li>';
-          }).join('')+
-        '</ul>'+
-      '</details>'
-    : '';
+    ? '<details class="agent-docs"><summary><span class="ico" data-ico="doc"></span>Документы агента ('+enabled.length+')'+(disabled.length?' · отключено '+disabled.length:'')+'</summary><ul>'+
+      enabled.map(d=>'<li><span class="ext '+esc((d.filename.split('.').pop()||'').toLowerCase())+'">'+(d.filename.split('.').pop()||'').toUpperCase()+'</span><span class="doc-name">'+esc(d.filename)+'</span><span class="muted">'+fmtSize(d.file_size)+'</span></li>').join('')+
+      disabled.map(d=>'<li class="disabled"><span class="ext '+esc((d.filename.split('.').pop()||'').toLowerCase())+'">'+(d.filename.split('.').pop()||'').toUpperCase()+'</span><span class="doc-name">'+esc(d.filename)+'</span><span class="muted">отключён</span></li>').join('')+
+      '</ul></details>' : '';
 
   let msgsHtml = msgs.map(m => msgHtml(m, a)).join('');
-
-  if (activeStream && activeStream.active) {
-    msgsHtml += '<div class="msg agent" id="live-stream" aria-label="Агент печатает">'+
-      tile(a) +
-      '<div>'+
-        '<div class="bubble streaming">' + mdHtml(activeStream.text, {skipHighlight: true}) + '</div>'+
-        '<time></time>'+
-      '</div>'+
-    '</div>';
+  
+  if (isGenerating) {
+    const streamText = S.streams[id]?.text || '';
+    msgsHtml += '<div class="msg agent" id="live-stream" aria-label="Агент печатает">'+tile(a)+
+      '<div><div class="bubble streaming">' + mdHtml(streamText, {skipHighlight: true}) + '</div><time></time></div></div>';
   }
 
-  v.innerHTML=
+  const btnHtml = isGenerating 
+    ? '<button class="send stop" id="stopBtn" type="button" aria-label="Остановить"><span class="ico" data-ico="stop"></span></button>'
+    : '<button class="send" id="sendBtn" type="submit" aria-label="Отправить" disabled><span class="ico" data-ico="send"></span></button>';
+
+  v.innerHTML =
   '<header class="chat-head">'+
-    '<button class="icon-btn" data-action="chat-back" aria-label="Назад"><span class="ico" data-ico="back"></span></button>'+
-    tile(a)+
-    '<div class="grow"><h1>'+esc(a.name)+'</h1>'+
-      '<small><span class="dot"></span>'+(owned?'Мой агент':'Поделились'+(a.owner_name?' · '+esc(a.owner_name):''))+'</small></div>'+
+    '<button class="icon-btn" data-action="chat-back" aria-label="Назад"><span class="ico" data-ico="back"></span></button>'+tile(a)+
+    '<div class="grow"><h1>'+esc(a.name)+'</h1><small><span class="dot"></span>'+(owned?'Мой агент':'Поделились'+(a.owner_name?' · '+esc(a.owner_name):''))+'</small></div>'+
     (owned?'<button class="icon-btn" data-action="edit-agent" data-id="'+id+'" aria-label="Редактировать"><span class="ico" data-ico="edit"></span></button>':'')+
-    '<button class="icon-btn" data-action="clear-chat" aria-label="Очистить чат" title="Очистить чат"><span class="ico" data-ico="broom"></span></button>'+
+    '<button class="icon-btn" data-action="clear-chat" aria-label="Очистить чат"><span class="ico" data-ico="broom"></span></button>'+
   '</header>'+
   '<div class="chat-body" id="chatBody"><div class="chat-col" id="chatCol">'+
-    '<div class="welcome">'+tile(a,true)+'<h2>'+esc(a.name)+'</h2>'+
-      '<p>'+esc(a.description||'Задайте вопрос, и агент ответит в рамках своих инструкций.')+'</p>'+
-      docsBlock+
-      '<div class="chips">'+
-        ['Чем ты можешь помочь?','Кратко опиши свои возможности','Как лучше формулировать запросы?'].map(t=>
-          '<button class="chip" data-action="tip" data-t="'+esc(t)+'">'+esc(t)+'</button>').join('')+
-      '</div>'+
+    '<div class="welcome">'+tile(a,true)+'<h2>'+esc(a.name)+'</h2><p>'+esc(a.description||'Задайте вопрос.')+'</p>'+docsBlock+
+      '<div class="chips">'+['Чем ты можешь помочь?','Кратко опиши свои возможности'].map(t=>'<button class="chip" data-action="tip" data-t="'+esc(t)+'">'+esc(t)+'</button>').join('')+'</div>'+
     '</div>'+
     '<div id="chatMsgs" style="display:contents">' + msgsHtml + '</div>'+
   '</div></div>'+
-  '<form class="composer" id="chatForm">'+
-    '<div class="composer-in">'+
-      '<textarea id="chatInput" rows="1" placeholder="Напишите сообщение…" aria-label="Сообщение агенту"></textarea>'+
-      '<button class="send" id="sendBtn" type="submit" aria-label="Отправить" disabled><span class="ico" data-ico="send"></span></button>'+
-    '</div>'+
-    '<small>Enter — отправить, Shift+Enter — новая строка.</small>'+
-  '</form>';
+  '<form class="composer" id="chatForm"><div class="composer-in">'+
+    '<textarea id="chatInput" rows="1" placeholder="'+(isGenerating?'Агент печатает…':'Напишите сообщение…')+'" aria-label="Сообщение" '+(isGenerating?'disabled':'')+'></textarea>'+
+    btnHtml +
+  '</div><small>Enter — отправить, Shift+Enter — новая строка.</small></form>';
 
-  const inp=document.getElementById('chatInput'), btn=document.getElementById('sendBtn');
-  inp.addEventListener('input',()=>{
-    inp.style.height='auto';
-    inp.style.height=Math.min(inp.scrollHeight,160)+'px';
-    btn.disabled=busy||!inp.value.trim();
-  });
-  inp.addEventListener('keydown',e=>{
-    if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){
-      e.preventDefault();
-      document.getElementById('chatForm').requestSubmit();
+  const inp = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const stopBtn = document.getElementById('stopBtn');
+
+  if (isGenerating) {
+    if (stopBtn) stopBtn.onclick = () => stopGeneration(id);
+    if (!S.streams[id]) {
+      S.streams[id] = { text: '', active: true, hasReader: false };
     }
-  });
-  
-  if (busy) {
-    btn.disabled = true;
+    if (!S.streams[id].hasReader) {
+      S.streams[id].hasReader = true;
+      fetch('/api/v1/chat/stream/' + state.convId, { credentials: 'same-origin', cache: 'no-store' })
+        .then(resp => {
+          if (resp.ok) {
+            consumeStream(resp, a, id, state);
+          } else {
+            S.streams[id] = null;
+            S.chats[id] = null; 
+            renderChat(id); 
+          }
+        })
+        .catch(()=>{});
+    }
+  } else {
+    inp.addEventListener('input', () => { 
+        inp.style.height='auto'; 
+        inp.style.height=Math.min(inp.scrollHeight,160)+'px'; 
+        const b = document.getElementById('sendBtn');
+        if (b) b.disabled = !inp.value.trim(); 
+    });    inp.addEventListener('keydown', e => { if(e.key==='Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); document.getElementById('chatForm').requestSubmit(); } });
+    document.getElementById('chatForm').addEventListener('submit', e => { e.preventDefault(); sendMsg(inp.value); });
   }
-
-  document.getElementById('chatForm').addEventListener('submit',e=>{e.preventDefault();sendMsg(inp.value);});
-  
   scrollChat();
   hydrateIcons(v);
 }
-function scrollChat(){const b=document.getElementById('chatBody');if(b)b.scrollTop=b.scrollHeight;}
-function updateStreamUI(id) {
-  const stream = S.streams[id];
-  if (!stream || !stream.active) return;
+async function consumeStream(resp, a, id, state) {
+  let answerText = S.streams[id]?.text || '';
+  let errorMsg = null;
+  let lastPaint = 0;
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
   
-  if (String(chatId) !== String(id)) return; 
-
-  const bubble = document.querySelector('#live-stream .bubble');
-  if (bubble) {
-    bubble.innerHTML = mdHtml(stream.text, {skipHighlight: true});
-    scrollChat();
-  }
-}
-async function sendMsg(raw){
-  const text=(raw||'').trim();
-  if(!text||busy||!chatId)return;
-  const a=getAgent(chatId),id=chatId;
-  if(!a)return;
-
-  const state = S.chats[id] || (S.chats[id] = { convId: null, messages: [] });
-  const um={role:'user',text,ts:Date.now()};
-  state.messages.push(um);
-
-  S.streams[id] = { text: '', active: true };
-
-  const box=document.getElementById('chatMsgs'),inp=document.getElementById('chatInput');
-  box.insertAdjacentHTML('beforeend',msgHtml(um,a));
-  inp.value='';inp.style.height='auto';busy=true;
-  document.getElementById('sendBtn').disabled=true;
-
-  box.insertAdjacentHTML('beforeend',
-    '<div class="msg agent" id="live-stream" aria-label="Агент печатает">'+tile(a)+
-    '<div><div class="bubble streaming"></div><time></time></div></div>');
-  scrollChat();
-
-  let errorMsg=null;
-  let lastMdPaint = 0;
-
-  try{
-    const resp=await fetch('/api/v1/chat/stream',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      credentials:'same-origin',
-      body:JSON.stringify({
-        message:text,
-        system_prompt:a.system_prompt||null,
-        agent_id:Number(chatId),
-        conversation_id: state.convId,
-      }),
-    });
-
-    if(resp.status===401){
-      location.href='/login?next='+encodeURIComponent(location.pathname);
-      return;
+  let lastActivity = Date.now();
+  const idleTimer = setInterval(() => {
+    if (Date.now() - lastActivity > 3600000) { // 1 час
+      errorMsg = errorMsg || "Превышено время ожидания.";
+      reader.cancel().catch(()=>{});
+      clearInterval(idleTimer);
     }
-    if(!resp.ok){
-      const j=await resp.json().catch(()=>null);
-      const det=j&&(typeof j.detail==='string'?j.detail:JSON.stringify(j.detail));
-      throw new Error(det||('Ошибка '+resp.status));
-    }
+  }, 5000);
 
-    const newConvId = resp.headers.get('X-Conversation-Id');
-    if(newConvId) state.convId = Number(newConvId);
-
-    const reader=resp.body.getReader();
-    const decoder=new TextDecoder();
-    let buffer='';
-
-    outer: while(true){
-      const {done,value}=await reader.read();
-      if(done) break;
-      buffer+=decoder.decode(value,{stream:true});
-
+  try {
+    outer: while(true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      lastActivity = Date.now();
+      buffer += decoder.decode(value, {stream: true});
+      
       let idx;
-      while((idx=buffer.indexOf('\n\n'))>=0){
-        const rawEvent=buffer.slice(0,idx);
-        buffer=buffer.slice(idx+2);
-        if(!rawEvent.trim()) continue;
-
-        const line=rawEvent.startsWith('data: ')?rawEvent.slice(6):rawEvent;
-        if(line==='[DONE]') break outer;
+      while((idx = buffer.indexOf('\n\n')) >= 0) {
+        const rawEvent = buffer.slice(0, idx);
+        buffer = buffer.slice(idx + 2);
+        if (!rawEvent.trim()) continue;
+        const line = rawEvent.startsWith('data: ') ? rawEvent.slice(6) : rawEvent;
+        if (line === '[DONE]') break outer;
 
         let data;
-        try{ data=JSON.parse(line); }catch(e){ continue; }
-
-        if(data.error){ errorMsg=data.error; break outer; }
-        if(data.delta){
-          S.streams[id].text += data.delta;
+        try { data = JSON.parse(line); } catch(e) { continue; }
+        if (data.error) { errorMsg = data.error; break outer; }
+        
+        if (data.reset) {
+          answerText = data.text;
+          if (S.streams[id]) S.streams[id].text = answerText;
+          if (String(chatId) === String(id)) {
+             const b = document.querySelector('#live-stream .bubble');
+             if (b) { b.innerHTML = mdHtml(answerText, {skipHighlight: true}); scrollChat(); }
+          }
+        } else if (data.delta) {
+          let chunkText = "";
+          if (typeof data.delta === 'string') {
+            chunkText = data.delta;
+          } else if (typeof data.delta === 'object' && data.delta !== null) {
+            chunkText = data.delta.content || "";
+          }
+          
+          answerText += chunkText;
+          if (S.streams[id]) S.streams[id].text = answerText;
           
           const now = Date.now();
-          if (now - lastMdPaint > 500) {
-            lastMdPaint = now;
-            updateStreamUI(id);
+          if (now - lastPaint > 500) {
+            lastPaint = now;
+            if (String(chatId) === String(id)) {
+              const b = document.querySelector('#live-stream .bubble');
+              if (b) { b.innerHTML = mdHtml(answerText, {skipHighlight: true}); scrollChat(); }
+            }
           }
         }
       }
     }
-    updateStreamUI(id); 
-  }catch(e){
-    errorMsg=e.message||String(e);
+  } catch (e) { 
+    if (e.name !== 'AbortError' && !e.message.includes('input stream')) {
+      errorMsg = errorMsg || e.message; 
+    }
+  } finally {
+    clearInterval(idleTimer);
   }
 
-  let answerText = S.streams[id].text;
-  if(errorMsg && !answerText){
-    answerText='Не удалось получить ответ от модели: '+errorMsg;
-  }else if(errorMsg){
-    answerText+='\n\n[ошибка: '+errorMsg+']';
-  }
+  if (errorMsg && !answerText) answerText = 'Ошибка: ' + errorMsg;
+  else if (errorMsg) answerText += '\n\n[ошибка: ' + errorMsg + ']';
 
-  const am={role:'agent',text:answerText,ts:Date.now()};
-  state.messages.push(am);
+  state.messages.push({role:'agent', text:answerText, ts:Date.now()});
+  if (S.streams[id]) { S.streams[id].active = false; S.streams[id] = null; }
   
-  delete S.streams[id];
-
-  if(String(chatId) === String(id)){
+  if (String(chatId) === String(id)) {
     const live = document.getElementById('live-stream');
     if (live) {
+      const b = live.querySelector('.bubble');
+      if (b) { b.innerHTML = mdHtml(answerText); b.classList.remove('streaming'); }
+      const t = live.querySelector('time'); if (t) t.textContent = fmtTime(Date.now());
       live.removeAttribute('id');
-      const bubble = live.querySelector('.bubble');
-      bubble.classList.remove('streaming');
-      bubble.innerHTML = mdHtml(answerText);
-      const time = live.querySelector('time');
-      if (time) time.textContent = fmtTime(am.ts);
-      scrollChat();
+    }
+    restoreComposerUI();
+    scrollChat();
+  }
+  
+  loadConversations().catch(()=>{});
+}
+async function sendMsg(raw){
+  const text=(raw||'').trim();
+  if(!text||!chatId)return;
+  if (S.streams[chatId] && S.streams[chatId].active) return;
+  const a=getAgent(chatId),id=chatId;
+  if(!a)return;
+
+  const state = S.chats[id] || (S.chats[id] = { convId: null, messages: [] });
+  state.messages.push({role:'user',text,ts:Date.now()});
+
+  const box=document.getElementById('chatMsgs'),inp=document.getElementById('chatInput');
+  box.insertAdjacentHTML('beforeend',msgHtml({role:'user',text,ts:Date.now()},a));
+  inp.value='';inp.style.height='auto';
+  
+  const sendBtn = document.getElementById('sendBtn');
+  if (sendBtn) sendBtn.remove();
+  
+  inp.disabled = true;
+  document.querySelector('.composer-in').insertAdjacentHTML('beforeend',
+    '<button class="send stop" id="stopBtn" type="button" aria-label="Остановить"><span class="ico" data-ico="stop"></span></button>');
+  hydrateIcons(document.querySelector('.composer-in'));
+  document.getElementById('stopBtn').onclick = () => stopGeneration(id);
+
+  box.insertAdjacentHTML('beforeend',
+    '<div class="msg agent" id="live-stream" aria-label="Агент печатает">'+tile(a)+
+    '<div><div class="bubble streaming"><i></i><i></i><i></i></div><time></time></div></div>');
+  scrollChat();
+
+  const controller = new AbortController();
+  S.streams[id] = { text: '', active: true, hasReader: true, abortController: controller };
+
+  try{
+    const resp=await fetch('/api/v1/chat/stream',{
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin',
+      body:JSON.stringify({ message:text, system_prompt:a.system_prompt||null, agent_id:Number(id), conversation_id: state.convId }),
+      signal: controller.signal
+    });
+    if(!resp.ok) throw new Error('Ошибка ' + resp.status);
+    const newConvId = resp.headers.get('X-Conversation-Id');
+    if(newConvId) state.convId = Number(newConvId);
+    await consumeStream(resp, a, id, state);
+  } catch(err) {
+    if (err.name !== 'AbortError') {
+      const live = document.getElementById('live-stream');
+      if (live) live.remove();
+      const am = {role:'agent',text:'Не удалось получить ответ: '+err.message,ts:Date.now()};
+      state.messages.push(am);
+      
+      if (String(chatId) === String(id)) {
+        box.insertAdjacentHTML('beforeend',msgHtml(am,a));
+        restoreComposerUI(); 
+      }
+      if (S.streams[id]) { S.streams[id].active = false; S.streams[id] = null; }
     }
   }
+}
 
-  loadConversations().catch(()=>{});
-  busy=false;
-  const i=document.getElementById('chatInput');
-  if (i) document.getElementById('sendBtn').disabled=!i.value.trim();
+async function stopGeneration(id) {
+  const state = S.chats[id];
+  const stream = S.streams[id];
+  
+  if (stream && stream.abortController) {
+    stream.abortController.abort(); 
+  }
+  
+  if (state && state.convId) {
+    try {
+      await apiFetch('/api/v1/chat/stream/' + state.convId, { method: 'DELETE' }); 
+    } catch(e) {}
+  }
+  
+  S.streams[id] = null;
+  if (String(chatId) === String(id)) {
+    restoreComposerUI(); 
+    const live = document.getElementById('live-stream');
+    if (live) {
+        live.removeAttribute('id');
+        live.querySelector('.bubble').classList.remove('streaming');
+    }
+  }
 }
 
 async function clearChat(){
@@ -1117,9 +1213,12 @@ async function clearChat(){
   if(!(await confirmDlg('Очистить чат?',
     'Все сообщения этой переписки будут удалены с сервера.', 'Очистить'))) return;
 
+  if (S.streams[chatId] && S.streams[chatId].active) {
+    await stopGeneration(chatId);
+  }
+
   try{
-    await apiFetch('/api/v1/conversations/' + state.convId + '/messages',
-      { method:'DELETE' });
+    await apiFetch('/api/v1/conversations/' + state.convId + '/messages', { method:'DELETE' });
     state.messages = [];
     renderChat(chatId);
     toast('Чат очищен.');
@@ -1168,7 +1267,7 @@ async function route(){
   if(name==='chat'){
     const a=getAgent(arg);
     if(!a){location.hash='#/overview';return;}
-    renderChat(arg);
+    await renderChat(arg); 
     document.title=a.name+' — Мнемозина';
   } else {
     ROUTES[name]();
@@ -1333,13 +1432,16 @@ async function deleteAgent(id){
   if(!a)return;
   if(!(await confirmDlg('Удалить агента?','«'+a.name+'» будет удалён.')))return;
   try{
+    if(S.streams[id]){
+      if(S.streams[id].abortController) S.streams[id].abortController.abort();
+      S.streams[id] = null;
+    }
+    delete S.chats[id];
     await apiFetch('/api/v1/agents/'+id,{method:'DELETE'});
     toast('Агент удалён.');
     await loadAgents();
     await loadCatalog();
-    buildNav(currentSection());
-    delete S.chats[id]
-    route();
+    if(location.hash.startsWith('#/chat/'+id)) location.hash = '#/agents'; else route();
   }catch(e){ toast('Не удалось удалить: '+e.message,'error'); }
 }
 

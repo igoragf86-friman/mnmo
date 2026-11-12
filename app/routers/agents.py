@@ -18,6 +18,7 @@ from app.models import (
     Agent,
     AgentDocument,
     AgentShare,
+    Conversation,
     Document,
     User,
 )
@@ -401,6 +402,11 @@ async def delete_agent(
         raise HTTPException(404, "Агент не найден.")
     if not _can_edit(user, agent):
         raise HTTPException(403, "Нет прав на удаление.")
+
+    await db.execute(delete(Conversation).where(Conversation.agent_id == agent_id))
+    await db.execute(delete(AgentDocument).where(AgentDocument.agent_id == agent_id))
+    await db.execute(delete(AgentShare).where(AgentShare.agent_id == agent_id))
+
     await db.delete(agent)
     await db.commit()
     return None

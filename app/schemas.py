@@ -114,6 +114,8 @@ class ConversationOut(BaseModel):
     updated_at: datetime
     message_count: int = 0
     last_message: str | None = None
+    messages: list[MessageOut] = Field(default_factory=list)
+    is_generating: bool = False
 
 
 class ConversationDetailOut(ConversationOut):

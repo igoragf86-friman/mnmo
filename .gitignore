@@ -17,3 +17,4 @@ __pycache__
 models/
 *.md
 *.log
+/static/katex
