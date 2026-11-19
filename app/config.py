@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     chunk_size: int = Field(default=500, gt=100)         
     chunk_tolerance: int = Field(default=200, ge=0)      
     chunk_overlap: int = Field(default=100, ge=0) 
+    chunk_max_size: int = Field(default=1200, gt=100)
+    chunk_semantic_threshold: float = Field(default=0.20, ge=0, le=2) 
 @lru_cache
 def get_settings() -> Settings:
     return Settings()

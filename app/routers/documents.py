@@ -1,5 +1,6 @@
 from __future__ import annotations
-
+import asyncio
+import json
 from typing import Annotated, Literal
 
 from fastapi import (
@@ -10,11 +11,13 @@ from fastapi import (
     Query,
     UploadFile,
     status,
+    BackgroundTasks,
 )
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-
+from fastapi.responses import StreamingResponse
+from app.state import document_subscribers
 from app.auth import CurrentUserRequired
 from app.database import get_db
 from app.models import Document, User
@@ -55,6 +58,7 @@ def _visible_clause(user: User):
     status_code=status.HTTP_201_CREATED,
 )
 async def upload_document(
+    background_tasks: BackgroundTasks,
     user: CurrentUserRequired,
     db: Annotated[AsyncSession, Depends(get_db)],
     file: Annotated[UploadFile, File(...)],
@@ -64,10 +68,7 @@ async def upload_document(
     try:
         meta = await save_upload(file, filename, user.id, user.name)
     except StorageError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     doc = Document(
         uploaded_by=user.id,
@@ -76,15 +77,11 @@ async def upload_document(
         mime_type=meta["mime_type"],
         file_size=meta["file_size"],
         checksum=meta["checksum"],
-        status="uploaded",
+        status="processing",
     )
     db.add(doc)
     await db.commit()
     
-    file_path = storage_root() / meta["storage_path"]
-    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
-    await index_document(db, doc, file_path, ext)
-
     doc = (
         await db.execute(
             select(Document)
@@ -92,6 +89,12 @@ async def upload_document(
             .options(selectinload(Document.uploaded_by_user))
         )
     ).scalar_one()
+
+    file_path = storage_root() / meta["storage_path"]
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    
+    from app.rag import index_document_background
+    background_tasks.add_task(index_document_background, doc.id, file_path, ext)
 
     return _to_out(user, doc)
 
@@ -141,7 +144,26 @@ async def list_documents(
         items=[_to_out(user, d) for d in rows],
         total=total,
     )
+@router.get("/stream")
+async def stream_document_status(user: CurrentUserRequired):
+    q = asyncio.Queue()
+    document_subscribers.append(q)
 
+    async def gen():
+        try:
+            while True:
+                event = await q.get()
+                if event["user_id"] == user.id or user.role == "admin":
+                    yield f"data: {json.dumps(event)}\n\n"
+        finally:
+            if q in document_subscribers:
+                document_subscribers.remove(q)
+
+    return StreamingResponse(
+        gen(), 
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+    )
 
 @router.delete("/{doc_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_document(

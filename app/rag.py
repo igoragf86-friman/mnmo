@@ -4,9 +4,11 @@ import logging
 from pathlib import Path
 import asyncio
 import httpx
+import math
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.state import publish_document_event
 from app.config import settings
 from app.models import AgentDocument, Document, DocumentChunk
 
@@ -55,83 +57,54 @@ def extract_text(path: Path, ext: str) -> str:
 
     raise ValueError(f"Неподдерживаемый формат: .{ext}")
 
+def _cosine_similarity(v1: list[float], v2: list[float]) -> float:
+    return sum(a * b for a, b in zip(v1, v2))
 
-
-def chunk_text(
-    text: str,
-    target: int | None = None,
-    tolerance: int | None = None,
-    overlap: int | None = None,
-) -> list[str]:
-
-    target = target or settings.chunk_size
-    tolerance = (
-        tolerance if tolerance is not None else settings.chunk_tolerance
-    )
-    overlap = overlap if overlap is not None else settings.chunk_overlap
-
-    text = text.replace("\r\n", "\n").replace("\r", "\n")
-    text = re.sub(r"[ \t]+", " ", text)
-    text = re.sub(r"\n{3,}", "\n\n", text)
-    text = re.sub(r"(?<!\n)\n(?!\n)", " ", text)
-    text = text.strip()
+async def semantic_chunk_text(text: str) -> list[str]:
+    text = text.replace("\r\n", "\n").strip()
     if not text:
         return []
 
-    n = len(text)
-    min_size = max(target - tolerance, target // 2)
-    max_size = target + tolerance
+    import re
+    paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+    sentences = []
+    for p in paragraphs:
+        sents = re.split(r'(?<=[.!?])\s+', p)
+        sentences.extend([s.strip() for s in sents if s.strip()])
 
-    overlap = min(overlap, min_size // 2)
-
-    chunks: list[str] = []
-    start = 0
-
-    while start < n:
-        target_pos = start + target
-        min_end = min(start + min_size, n)
-        max_end = min(start + max_size, n)
-
-        if n <= max_end:
-            end = n
+    blocks = []
+    current = ""
+    for s in sentences:
+        if len(current) + len(s) < 200:
+            current = (current + " " + s).strip()
         else:
-            window = text[min_end:max_end]
-            offset = min_end
+            if current: blocks.append(current)
+            current = s
+    if current: blocks.append(current)
 
-            para_positions = []
-            p = 0
-            while True:
-                p = window.find("\n\n", p)
-                if p < 0:
-                    break
-                para_positions.append(offset + p)
-                p += 2
+    if len(blocks) <= 1:
+        return blocks
 
-            if para_positions:
-                best = min(para_positions, key=lambda x: abs(x - target_pos))
-                end = best + 2
-            else:
-                sent_positions = [
-                    offset + m.start() + 1
-                    for m in re.finditer(r"[.!?](?=\s|$)", window)
-                ]
-                if sent_positions:
-                    best = min(sent_positions, key=lambda x: abs(x - target_pos))
-                    end = best
-                else:
-                    end = start + target
+    embeddings = await embedding_client.embed_passages(blocks)
 
-        chunk = text[start:end].strip()
-        if chunk:
-            chunks.append(chunk)
+    chunks = []
+    current_chunk = [blocks[0]]
+    current_len = len(blocks[0])
 
-        if end >= n:
-            break
+    for i in range(1, len(blocks)):
+        sim = _cosine_similarity(embeddings[i-1], embeddings[i])
+        dist = 1.0 - sim
+        
+        if dist > settings.chunk_semantic_threshold or current_len + len(blocks[i]) > settings.chunk_max_size:
+            chunks.append(" ".join(current_chunk))
+            current_chunk = [blocks[i]]
+            current_len = len(blocks[i])
+        else:
+            current_chunk.append(blocks[i])
+            current_len += len(blocks[i])
 
-        new_start = end - overlap
-        if new_start <= start:
-            new_start = start + 1
-        start = new_start
+    if current_chunk:
+        chunks.append(" ".join(current_chunk))
 
     return chunks
 
@@ -241,17 +214,24 @@ async def search_chunks(
     rows = (await db.execute(stmt)).all()
     return [(chunk, float(dist)) for chunk, dist in rows if dist <= max_distance]
 
-
-async def index_document(
-    db: AsyncSession, doc: Document, path: Path, ext: str
-) -> None:
+async def index_document_background(doc_id: int, path: Path, ext: str) -> None:
+    from app.database import AsyncSessionLocal
+    from app.models import Document
+    
+    async with AsyncSessionLocal() as db:
+        doc = await db.get(Document, doc_id)
+        if doc is None:
+            return 
+        await index_document(db, doc, path, ext)
+async def index_document(db: AsyncSession, doc: Document, path: Path, ext: str) -> None:
     try:
         text = extract_text(path, ext)
         doc.text = text
         doc.status = "processing"
         await db.commit()
 
-        chunks = chunk_text(text)
+        chunks = await semantic_chunk_text(text)
+        
         if not chunks:
             doc.status = "ready"
             doc.error_message = None
@@ -281,3 +261,5 @@ async def index_document(
         doc.status = "failed"
         doc.error_message = str(exc)[:1000]
         await db.commit()
+    finally:
+        await publish_document_event(doc.id, doc.status, doc.uploaded_by)

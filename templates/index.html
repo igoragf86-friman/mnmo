@@ -1795,7 +1795,30 @@ document.getElementById('agentForm').addEventListener('submit',submitAgent);
 
 let appReady = false;
 window.addEventListener('hashchange', () => { if(appReady) route(); });
+let docEvents = null;
 
+function initDocumentStream() {
+  if (docEvents) docEvents.close();
+  
+  docEvents = new EventSource('/api/v1/documents/stream');
+  
+  docEvents.onmessage = (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      
+      if (location.hash === '#/docs' || location.hash === '') {
+        renderDocList();
+      }
+      
+    } catch (err) {}
+  };
+
+  docEvents.onerror = () => {
+    console.log('SSE отключен. Ждем переподключения...');
+  };
+}
+
+setTimeout(initDocumentStream, 1000);
 hydrateIcons(document);
 (async () => {
   await Promise.all([loadMe(), loadAgents(), loadCatalog(), loadDocs(), loadConversations()]);

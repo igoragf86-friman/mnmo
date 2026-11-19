@@ -1,3 +1,6 @@
+import asyncio
+from datetime import datetime, timedelta, timezone
+from sqlalchemy import select, delete
 from contextlib import asynccontextmanager
 from urllib.parse import quote
 from fastapi import FastAPI, HTTPException, Request, Depends
@@ -9,9 +12,11 @@ from pydantic import BaseModel, Field
 from app.auth import AuthRequiredError, set_auth_cookies, require_user_page
 from app.auth import router as auth_router
 from app.config import settings
-from app.database import check_database_connection, engine
+from app.database import check_database_connection, engine, AsyncSessionLocal
 from app.qwen import QwenError, qwen_client
 from app.rag import close_embedding_client
+from app.storage import delete_file
+from app.models import Document
 
 from app.routers.chat import router as chat_router
 from app.routers.documents import router as documents_router
@@ -26,7 +31,6 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     yield
 
-    # Закрываем пул подключений PostgreSQL при остановке приложения.
     await engine.dispose()
 
 
@@ -45,6 +49,37 @@ app.include_router(conversations_router)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+async def cleanup_failed_documents():
+    while True:
+        try:
+            await asyncio.sleep(3600)
+            
+            async with AsyncSessionLocal() as db:
+                one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
+                stmt = select(Document).where(
+                    Document.status == "failed",
+                    Document.created_at < one_hour_ago
+                )
+                docs = (await db.execute(stmt)).scalars().all()
+                
+                for doc in docs:
+                    logger.info(f"Автоудаление сломанного документа {doc.id} ({doc.filename})")
+                    path = doc.storage_path
+                    await db.delete(doc)
+                    delete_file(path) 
+                
+                if docs:
+                    await db.commit()
+                    
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.error(f"Ошибка в фоновой очистке: {e}")
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(cleanup_failed_documents())
+    
 @app.on_event("shutdown")
 async def _shutdown():
     await qwen_client.close()
