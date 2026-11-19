@@ -12,12 +12,10 @@ from app.config import settings
 
 ALLOWED_EXTENSIONS: dict[str, str] = {
     "pdf": "application/pdf",
-    "docx": (
-        "application/vnd.openxmlformats-officedocument."
-        "wordprocessingml.document"
-    ),
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "doc": "application/msword",
+    "txt": "text/plain",
 }
-
 _CHUNK = 1024 * 1024
 _SLUG_RE = re.compile(r"[^A-Za-z0-9_.-]+")
 

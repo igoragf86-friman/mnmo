@@ -92,7 +92,7 @@
           <button type="button" class="btn sm" data-action="upload-agent-doc">
             <span class="ico" data-ico="upload"></span>Загрузить документ
           </button>
-          <input type="file" id="fDocsFileInput" accept=".pdf,.docx" hidden>
+          <input type="file" id="fDocsFileInput" accept=".pdf,.docx,.doc,.txt" hidden>
           <span class="hint muted" id="fDocsUploadStatus"></span>
         </div>
       </fieldset>
@@ -214,6 +214,7 @@ function icon(name){return '<svg viewBox="0 0 24 24" fill="none" stroke="current
 const AGENT_ICONS=['bot','doc','code','pen','search','book','chart','spark'];
 const AGENT_COLORS=[['#4f46e5','Индиго'],['#7c3aed','Фиолетовый'],['#0284c7','Голубой'],['#0f8a5f','Зелёный'],['#c62842','Малиновый'],['#b45309','Охра']];
 const MAX_FILE_MB=20;
+const ALLOWED_EXT=['pdf','docx','doc','txt'];
 </script>
 <script>
 /* Состояние + локальное хранилище (только чаты) */
@@ -604,6 +605,17 @@ async function renderDocList(){
   try{
     const data=await apiFetch('/api/v1/documents?'+qs.toString());
     S.docs=data.items; S.docsCount=data.total;
+    let emptyTitle = 'Документов нет';
+    let emptyText = 'Загрузите PDF, DOCX, DOC или TXT — они появятся здесь.';
+    
+    if (S.ui.docExt) {
+      const extUpper = S.ui.docExt.toUpperCase();
+      emptyTitle = `Нет файлов ${extUpper}`;
+      emptyText = `Вы еще не загрузили ни одного файла в формате .${S.ui.docExt}. Загрузите документ, чтобы он появился здесь.`;
+    } else if (S.ui.docQ) {
+      emptyTitle = 'Ничего не найдено';
+      emptyText = `По запросу «${S.ui.docQ}» ничего не найдено. Попробуйте изменить запрос.`;
+    }
 
     el.innerHTML = data.items.length
       ? '<div class="list">'+data.items.map(d=>{
@@ -619,7 +631,7 @@ async function renderDocList(){
             (d.can_delete?'<button class="icon-btn bad" data-action="del-doc" data-id="'+d.id+'" aria-label="Удалить"><span class="ico" data-ico="trash"></span></button>':'')+
           '</div>';
         }).join('')+'</div>'
-      : emptyBox('doc','Документов нет','Загрузите PDF или DOCX — они появятся здесь.');
+      : emptyBox('doc', emptyTitle, emptyText);
 
     hydrateIcons(el);
     buildNav('docs');
@@ -640,10 +652,10 @@ function renderDocs(){
         '<label class="drop" id="dropZone" for="fileInput">'+
           '<span class="ico" data-ico="upload"></span>'+
           '<b>Перетащите файлы сюда</b>'+
-          '<small>PDF, DOCX · до '+MAX_FILE_MB+' МБ</small>'+
+          '<small>PDF, DOCX, DOC, TXT · до '+MAX_FILE_MB+' МБ</small>'+
           '<span class="btn sm">Выбрать файлы</span>'+
         '</label>'+
-        '<input type="file" id="fileInput" multiple accept=".pdf,.docx" hidden>'+
+        '<input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.txt" hidden>'+
         '<p class="hint muted" id="uploadStatus"></p>'+
       '</div>'+
       '<div>'+
@@ -651,7 +663,7 @@ function renderDocs(){
           '<div class="search"><span class="ico" data-ico="search"></span>'+
           '<input type="search" id="docSearch" placeholder="Поиск по имени файла" aria-label="Поиск документов" value="'+esc(S.ui.docQ)+'"></div>'+
           '<div class="chips" role="group" aria-label="Расширение">'+
-            ['Все','PDF','DOCX'].map(x=>{
+            ['Все','PDF','DOCX','DOC','TXT'].map(x=>{
               const v=x==='Все'?'':x.toLowerCase();
               const on=(S.ui.docExt||'')===v;
               return '<button class="chip" data-action="docext" data-ext="'+v+'" aria-pressed="'+on+'">'+x+'</button>';
@@ -689,8 +701,15 @@ async function addFiles(files){
   for(let i=0;i<list.length;i++){
     const f=list[i];
     const ext=(f.name.split('.').pop()||'').toLowerCase();
-    if(ext!=='pdf'&&ext!=='docx'){bad.push('«'+f.name+'»: только PDF и DOCX');continue;}
-    if(f.size>MAX_FILE_MB*1048576){bad.push('«'+f.name+'»: больше '+MAX_FILE_MB+' МБ');continue;}
+    
+    if(!['pdf', 'docx', 'doc', 'txt'].includes(ext)){
+      bad.push('«'+f.name+'»: неподдерживаемый формат'); 
+      continue; 
+    }
+    if(f.size>MAX_FILE_MB*1048576){
+      bad.push('«'+f.name+'»: больше '+MAX_FILE_MB+' МБ'); 
+      continue;
+    }
 
     if(st) st.textContent='Загрузка '+(i+1)+' из '+list.length+': '+f.name+'…';
     const fd=new FormData();fd.append('file',f);
@@ -784,27 +803,23 @@ function mdHtml(text, opts){
   opts = opts || {};
   if(!mdReady) return esc(text).replace(/\n/g,'<br>');
   try{
-    // 1. Прячем математику (используем заглушку без подчеркиваний)
     const mathBlocks = [];
     let processedText = text.replace(/\$\$([\s\S]*?)\$\$/g, (match) => {
       const id = `MATHPLACEHOLDER${mathBlocks.length}`;
       mathBlocks.push({ id, content: match });
       return id;
     });
-    // Строчная математика
     processedText = processedText.replace(/\$([^$\n]+?)\$/g, (match) => {
       const id = `MATHPLACEHOLDER${mathBlocks.length}`;
       mathBlocks.push({ id, content: match });
       return id;
     });
 
-    // 2. Парсим Markdown
     const raw = marked.parse(processedText, {gfm:true, breaks:true});
     const clean = DOMPurify.sanitize(raw, {USE_PROFILES:{html:true}});
     const box = document.createElement('div');
     box.innerHTML = clean;
 
-    // 3. Возвращаем формулы обратно в DOM
     mathBlocks.forEach(block => {
       const walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT, null, false);
       let node;
@@ -815,7 +830,6 @@ function mdHtml(text, opts){
       }
     });
 
-    // 4. Обработка ссылок и таблиц
     box.querySelectorAll('a').forEach(a => {
       a.target = '_blank';
       a.rel = 'noopener noreferrer nofollow';
@@ -827,7 +841,6 @@ function mdHtml(text, opts){
       w.appendChild(t);
     });
 
-    // 5. Подсветка кода
     if(!opts.skipHighlight){
       box.querySelectorAll('pre code').forEach(code => {
         const m = /language-([\w+#-]+)/.exec(code.className || '');
@@ -842,7 +855,6 @@ function mdHtml(text, opts){
       });
     }
 
-    // 6. Рендер формул KaTeX
     if (window.renderMathInElement) {
       try {
         window.renderMathInElement(box, {
@@ -857,7 +869,6 @@ function mdHtml(text, opts){
       } catch(e) { console.error('KaTeX error:', e); }
     }
 
-    // Оборачиваем pre-блоки
     box.querySelectorAll('pre').forEach(pre => {
       const code = pre.querySelector('code');
       const m = /language-([\w+#-]+)/.exec((code && code.className) || '');
@@ -1719,13 +1730,13 @@ document.getElementById('fDocsFileInput')?.addEventListener('change', async e =>
   const st = document.getElementById('fDocsUploadStatus');
   const ext = (file.name.split('.').pop() || '').toLowerCase();
 
-  if (ext !== 'pdf' && ext !== 'docx') {
-    toast('Поддерживаются только PDF и DOCX', 'error');
-    return;
+  if (!['pdf', 'docx', 'doc', 'txt'].includes(ext)) {
+    toast('Поддерживаются только PDF, DOCX, DOC, TXT', 'error');
+    return; 
   }
   if (file.size > MAX_FILE_MB * 1048576) {
     toast('Файл больше ' + MAX_FILE_MB + ' МБ', 'error');
-    return;
+    return; 
   }
 
   if (st) st.textContent = 'Загрузка «' + file.name + '»…';
@@ -1735,13 +1746,10 @@ document.getElementById('fDocsFileInput')?.addEventListener('change', async e =>
 
   try {
     const doc = await apiFetch('/api/v1/documents', { method: 'POST', body: fd });
-
     S.docs.unshift(doc);
     pickerState.mine.unshift(doc);
     pickerState.checked.add(doc.id);
-
     renderDocsPicker();
-
     if (st) st.textContent = 'Загружено: ' + doc.filename;
     toast('Документ «' + doc.filename + '» загружен.');
   } catch (err) {

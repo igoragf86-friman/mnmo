@@ -16,29 +16,42 @@ _embed_client: httpx.AsyncClient | None = None
 
 def extract_text(path: Path, ext: str) -> str:
     ext = ext.lower()
+    
     if ext == "pdf":
         from pypdf import PdfReader
-
         reader = PdfReader(str(path))
         parts = []
         for page in reader.pages:
-            try:
-                parts.append(page.extract_text() or "")
-            except Exception:
-                logger.exception("Не удалось извлечь текст со страницы PDF")
+            try: parts.append(page.extract_text() or "")
+            except Exception: pass
         return "\n\n".join(p for p in parts if p.strip())
 
     if ext == "docx":
         import docx
-
         doc = docx.Document(str(path))
         parts = [p.text for p in doc.paragraphs if p.text.strip()]
         for table in doc.tables:
             for row in table.rows:
                 cells = [c.text.strip() for c in row.cells]
-                if any(cells):
-                    parts.append(" | ".join(cells))
+                if any(cells): parts.append(" | ".join(cells))
         return "\n\n".join(parts)
+
+    if ext == "doc":
+        import subprocess
+        try:
+            result = subprocess.run(
+                ["antiword", str(path)], 
+                capture_output=True, text=True, check=True
+            )
+            return result.stdout
+        except FileNotFoundError:
+            raise ValueError("Утилита 'antiword' не установлена. Невозможно прочитать .doc файл.")
+        except subprocess.CalledProcessError:
+            raise ValueError("Не удалось прочитать .doc файл. Возможно, он поврежден.")
+
+    if ext in ("txt", "md", "csv"):
+        return path.read_text(encoding="utf-8", errors="ignore")
+
 
     raise ValueError(f"Неподдерживаемый формат: .{ext}")
 

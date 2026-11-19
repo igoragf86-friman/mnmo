@@ -100,7 +100,7 @@ async def upload_document(
 async def list_documents(
     user: CurrentUserRequired,
     db: Annotated[AsyncSession, Depends(get_db)],
-    ext: Literal["pdf", "docx"] | None = None,
+    ext: Literal["pdf", "docx", "doc", "txt"] | None = None, 
     q: str | None = None,
     mine: bool = False,
     limit: int = Query(100, ge=1, le=500),

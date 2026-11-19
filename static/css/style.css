@@ -101,9 +101,18 @@ textarea{resize:vertical;line-height:1.5}
 .list{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
 .row{display:flex;align-items:center;gap:14px;padding:13px 16px;border-top:1px solid var(--border)}
 .row:first-child{border-top:0}
-.row-main{min-width:0;flex:1}
-.row-main b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.row-main small{color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}.row-main b {
+  white-space: nowrap;    
+  overflow: hidden;       
+  text-overflow: ellipsis; 
+  display: block;
+  max-width: 100%;
+}.row-main small{color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 a.row:hover,button.row:hover{background:var(--bg)}
 button.row{width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--border)}
 .row-meta{color:var(--muted);font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -114,7 +123,10 @@ button.row{width:100%;text-align:left;background:none;border:0;border-top:1px so
 .notice.info{background:var(--accent-soft);color:#2b2878}
 .notice .ico{width:18px;height:18px;margin-top:2px}
 .docs-layout{display:grid;grid-template-columns:minmax(0,360px) 1fr;gap:20px;align-items:start}
-.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:14px}
+.docs-layout > div {
+  min-width: 0; 
+}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;display:flex;flex-shrink: 0;flex-direction:column;gap:14px}
 .drop{border:1.5px dashed var(--border-strong);border-radius:var(--r);padding:26px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;transition:background .15s,border-color .15s;background:var(--bg)}
 .drop.over{border-color:var(--accent);background:var(--accent-soft)}
 .drop .ico{width:28px;height:28px;color:var(--accent)}
